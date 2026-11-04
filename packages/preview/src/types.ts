@@ -95,10 +95,27 @@ export interface PreviewDocument {
     revision: number
     baseRevision?: number
     sourceFingerprint?: string
+    baseline?: { fingerprint: string; path: string }
   }
   components: PreviewComponent[]
   diagnostics: Diagnostic[]
+  conflicts?: ReconciliationConflict[]
+  orphans?: OrphanedCustomization[]
   [extension: `x-${string}`]: JsonValue | undefined
+}
+export interface ReconciliationConflict {
+  path: string
+  code: string
+  message: string
+  baseline?: JsonValue
+  current?: JsonValue
+  generated?: JsonValue
+}
+export interface OrphanedCustomization {
+  path: string
+  reason: 'component-removed' | 'prop-removed' | 'state-removed'
+  value: JsonValue
+  sourceRevision: number
 }
 export interface ValidationIssue {
   path: string

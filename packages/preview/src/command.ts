@@ -57,6 +57,11 @@ export async function runCommand(args: string[], cwd: string): Promise<string> {
     { projectRoot: options.projectRoot },
   )
   generated.diagnostics.push(...diagnostics)
-  if (!values['dry-run']) await writeAnalysis(options.data, generated)
-  return `Project: ${options.projectRoot}\nInput: ${relative(options.projectRoot, options.input) || '.'}\nData: ${options.data}\nRuntime: ${options.runtime}\nComponents: ${generated.components.length}\nMock diagnostics: ${diagnostics.length}${values['dry-run'] ? ' (not written)' : ''}`
+  let result = generated
+  if (!values['dry-run'])
+    result = await writeAnalysis(options.data, generated, {
+      baselinesDir: options.baselines,
+      projectRoot: options.projectRoot,
+    })
+  return `Project: ${options.projectRoot}\nInput: ${relative(options.projectRoot, options.input) || '.'}\nData: ${options.data}\nRuntime: ${options.runtime}\nComponents: ${result.components.length}\nMock diagnostics: ${diagnostics.length}\nConflicts: ${result.conflicts?.length ?? 0}\nOrphans: ${result.orphans?.length ?? 0}${values['dry-run'] ? ' (not written)' : ''}`
 }

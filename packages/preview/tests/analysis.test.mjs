@@ -84,7 +84,7 @@ test('file and directory scope follow documented rules', async () => {
   )
 })
 
-test('writer refuses developer edits instead of destructive reconciliation', async (t) => {
+test('writer avoids churn and preserves edits when the generated baseline is unchanged', async (t) => {
   const document = await analyzeProject(options())
   const path = resolve(root, '.preview/test.json')
   t.after(async () => {
@@ -93,15 +93,12 @@ test('writer refuses developer edits instead of destructive reconciliation', asy
   })
   await writeAnalysis(path, document)
   const regenerated = await writeAnalysis(path, document)
-  assert.equal(regenerated.provenance.revision, 2)
+  assert.equal(regenerated.provenance.revision, 1)
   const edited = JSON.parse(await readFile(path, 'utf8'))
   edited.components[0].props.children.value = 'mine'
   await writeFile(path, stableSerialize(edited))
   assert.equal(hasDeveloperEdits(edited), true)
-  await assert.rejects(
-    writeAnalysis(path, document),
-    /contains developer-owned values/,
-  )
+  await writeAnalysis(path, document)
   assert.equal(
     JSON.parse(await readFile(path, 'utf8')).components[0].props.children.value,
     'mine',

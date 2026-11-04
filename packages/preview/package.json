@@ -31,6 +31,14 @@
       "types": "./dist/mock.d.ts",
       "import": "./dist/mock.js"
     },
+    "./persistence": {
+      "types": "./dist/persistence.d.ts",
+      "import": "./dist/persistence.js"
+    },
+    "./reconcile": {
+      "types": "./dist/reconcile.d.ts",
+      "import": "./dist/reconcile.js"
+    },
     "./schema": "./preview.schema.json"
   },
   "files": [

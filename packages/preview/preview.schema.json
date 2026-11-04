@@ -31,7 +31,16 @@
         "generatedAt": { "type": "string", "format": "date-time" },
         "revision": { "type": "integer", "minimum": 0 },
         "baseRevision": { "type": "integer", "minimum": 0 },
-        "sourceFingerprint": { "type": "string" }
+        "sourceFingerprint": { "type": "string" },
+        "baseline": {
+          "type": "object",
+          "required": ["fingerprint", "path"],
+          "properties": {
+            "fingerprint": { "type": "string" },
+            "path": { "type": "string" }
+          },
+          "additionalProperties": false
+        }
       },
       "additionalProperties": false
     },
@@ -39,11 +48,45 @@
     "diagnostics": {
       "type": "array",
       "items": { "$ref": "#/$defs/diagnostic" }
+    },
+    "conflicts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/conflict" }
+    },
+    "orphans": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/orphan" }
     }
   },
   "patternProperties": { "^x-": true },
   "additionalProperties": false,
   "$defs": {
+    "conflict": {
+      "type": "object",
+      "required": ["path", "code", "message"],
+      "properties": {
+        "path": { "type": "string" },
+        "code": { "type": "string" },
+        "message": { "type": "string" },
+        "baseline": {},
+        "current": {},
+        "generated": {}
+      },
+      "additionalProperties": false
+    },
+    "orphan": {
+      "type": "object",
+      "required": ["path", "reason", "value", "sourceRevision"],
+      "properties": {
+        "path": { "type": "string" },
+        "reason": {
+          "enum": ["component-removed", "prop-removed", "state-removed"]
+        },
+        "value": {},
+        "sourceRevision": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
     "diagnostic": {
       "type": "object",
       "required": ["severity", "code", "message"],

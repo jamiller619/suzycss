@@ -7,6 +7,7 @@ export interface PreviewOptions {
   output: string
   data: string
   runtime: string
+  baselines: string
   configPath?: string
   inputKind: 'file' | 'directory' | 'automatic'
 }
@@ -78,6 +79,7 @@ export async function resolveOptions(cli: {
     output,
     data: join(output, 'preview.json'),
     runtime: join(output, 'runtime'),
+    baselines: join(output, 'baselines'),
     configPath,
     inputKind,
   }

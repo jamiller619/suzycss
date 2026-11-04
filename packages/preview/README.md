@@ -85,11 +85,8 @@ component in `preview.json`. If `custom-elements.json` exists, matching CEM memb
 types, descriptions, and attribute mappings override source inference; source
 identity, imports, and defaults remain authoritative.
 
-Running `suzy-preview` writes analysis through an atomic, revision-checked save.
-`--dry-run` only reports results. Until full reconciliation is implemented, a
-document containing developer values, non-default states, chosen generators or
-validators, wrappers, or `x-*` extensions is refused rather than destructively
-rewritten.
+Running `suzy-preview` writes analysis through reconciliation and an atomic,
+revision-checked save. `--dry-run` only reports results.
 
 ## Deterministic mocks and validation
 
@@ -127,3 +124,43 @@ cap, and every complete state is validated after normal precedence is applied.
 `value` remains pinned during full or selective regeneration. Selection uses
 stable `<component-id>.<prop>` paths. Nested literal overrides use JSON Pointer;
 objects may be patched, while datasets/arrays are replaced as a whole.
+
+## Reconciliation and persistence
+
+Every active document points through `provenance.baseline` to an immutable,
+SHA-256-addressed generated snapshot under `.preview/baselines`. Regeneration
+performs a three-way merge of that exact baseline, the current editable JSON,
+and new analysis. A current field equal to the baseline is untouched generated
+data and advances; a current field different from the baseline is a manual JSON
+customization whether or not a UI ownership control was used. Deleting a custom
+field resets it when the baseline also omitted it. `null` and `$ref: "omit"`
+remain explicit values.
+
+Objects merge by field, while arrays and scalar values are atomic. Props merge
+by exact prop name, components by stable ID, and states by exact state name.
+There is deliberately no fuzzy rename matching. Customized removed props and
+components are copied into top-level `orphans`; incompatible simultaneous edits
+are retained as the editable value and recorded in `conflicts`. A custom value
+that no longer matches a changed type is preserved for review rather than
+coerced. Generated metadata continues to update around compatible values,
+validators, recipes, extensions, wrappers, and named states.
+
+`DocumentStore` serializes operations inside one process. UI saves must provide
+both the revision and byte etag returned by `read()`; either mismatch rejects the
+save as stale, including direct editor changes that did not bump the revision.
+Writes use a same-directory temporary file, file sync, two pre-rename etag
+checks, atomic rename where supported, directory sync where supported, and
+post-write byte verification. An interrupted write leaves the prior file and
+removes only its own temporary file. Content-addressed baselines are written
+first, so interruption can leave only a harmless unreferenced baseline.
+
+External editors do not participate in the in-process lock. The defined boundary
+is the final etag comparison immediately before rename. A detectable racing edit
+or failed post-write verification is returned as a conflict, never as a safely
+merged success. Callers should ignore watch events whose content hash matches
+`DocumentStore.isOwnWrite()` to avoid write loops.
+
+Malformed, structurally invalid, semantically invalid, and conflicted files stay
+on disk for correction. `read()` returns the last valid in-memory document when
+available but never writes that snapshot over the user's file. A proposed UI
+document is structurally and semantically validated before it can become active.

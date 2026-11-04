@@ -45,6 +45,28 @@ export function validateDocument(value: unknown): ValidationIssue[] {
       value.provenance.revision,
       'number',
     )
+    if (value.provenance.baseline !== undefined) {
+      pushType(
+        issues,
+        '$.provenance.baseline',
+        value.provenance.baseline,
+        'object',
+      )
+      if (object(value.provenance.baseline)) {
+        pushType(
+          issues,
+          '$.provenance.baseline.fingerprint',
+          value.provenance.baseline.fingerprint,
+          'string',
+        )
+        pushType(
+          issues,
+          '$.provenance.baseline.path',
+          value.provenance.baseline.path,
+          'string',
+        )
+      }
+    }
   }
   pushType(issues, '$.components', value.components, 'array')
   if (Array.isArray(value.components)) {
@@ -54,7 +76,38 @@ export function validateDocument(value: unknown): ValidationIssue[] {
     })
   }
   pushType(issues, '$.diagnostics', value.diagnostics, 'array')
+  validateReviewEntries(value.conflicts, '$.conflicts', issues, [
+    'path',
+    'code',
+    'message',
+  ])
+  validateReviewEntries(value.orphans, '$.orphans', issues, ['path', 'reason'])
   return issues
+}
+function validateReviewEntries(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+  stringKeys: string[],
+) {
+  if (value === undefined) return
+  pushType(issues, path, value, 'array')
+  if (!Array.isArray(value)) return
+  value.forEach((entry, index) => {
+    if (!object(entry)) {
+      issues.push({ path: `${path}[${index}]`, message: 'expected object' })
+      return
+    }
+    for (const key of stringKeys)
+      pushType(issues, `${path}[${index}].${key}`, entry[key], 'string')
+    if (path === '$.orphans')
+      pushType(
+        issues,
+        `${path}[${index}].sourceRevision`,
+        entry.sourceRevision,
+        'number',
+      )
+  })
 }
 function validateComponent(
   value: unknown,
