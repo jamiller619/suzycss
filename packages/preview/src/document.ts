@@ -172,7 +172,15 @@ function mergeComponent(
       return [
         name,
         previous
-          ? { ...prop, ...previous, type: prop.type, generated: prop.generated }
+          ? {
+              ...prop,
+              ...previous,
+              type: prop.type,
+              attribute: prop.attribute,
+              default: prop.default,
+              generated: prop.generated,
+              diagnostics: prop.diagnostics,
+            }
           : prop,
       ]
     }),

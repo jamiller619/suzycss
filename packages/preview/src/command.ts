@@ -1,8 +1,10 @@
 import { readFile } from 'node:fs/promises'
 import { relative, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
+import { analyzeProject } from './analysis.js'
 import { resolveOptions } from './config.js'
 import { assertDocument } from './document.js'
+import { writeAnalysis } from './write.js'
 
 export const help = `suzy-preview — local component previews without story files
 
@@ -13,6 +15,7 @@ Usage: suzy-preview [options]
   --input <path>     Source entry file or directory
   --output <path>    Output directory (default: <project-root>/.preview)
   --validate <path>  Validate an intermediate preview document
+  --dry-run          Analyze without writing preview.json
   --help, -h         Show help
 
 CLI paths are relative to the invocation directory. Config values are relative
@@ -29,6 +32,7 @@ export async function runCommand(args: string[], cwd: string): Promise<string> {
       input: { type: 'string' },
       output: { type: 'string' },
       validate: { type: 'string' },
+      'dry-run': { type: 'boolean' },
     },
   })
   if (values.help) return help
@@ -46,5 +50,7 @@ export async function runCommand(args: string[], cwd: string): Promise<string> {
     input: values.input,
     output: values.output,
   })
-  return `Project: ${options.projectRoot}\nInput: ${relative(options.projectRoot, options.input) || '.'}\nData: ${options.data}\nRuntime: ${options.runtime}`
+  const generated = await analyzeProject(options)
+  if (!values['dry-run']) await writeAnalysis(options.data, generated)
+  return `Project: ${options.projectRoot}\nInput: ${relative(options.projectRoot, options.input) || '.'}\nData: ${options.data}\nRuntime: ${options.runtime}\nComponents: ${generated.components.length}${values['dry-run'] ? ' (not written)' : ''}`
 }

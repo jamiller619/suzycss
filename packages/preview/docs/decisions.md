@@ -11,6 +11,14 @@
   diagnostics for unsupported type syntax instead of serializing a general AST.
 - Descriptor resolution must use an allowlisted built-in registry or explicit
   local module/export import. Never evaluate strings from JSON.
+- Discovery uses TypeScript 6's stable compiler API (the repository's TypeScript
+  7 native preview package does not expose the type checker). Automatic scope is
+  the static import/export graph; explicit file and directory scopes stay local.
+- CEM overrides matching member type text, description, and attribute mapping.
+  Source remains authoritative for stable identity, imports, and literal defaults.
+- Reconciliation is intentionally conservative: regenerate unedited documents,
+  but refuse any document with developer-owned fields until removal handling and
+  per-field ancestry are implemented.
 
 Focused verification: `yarn workspace @heysuzy/preview test` and
 `yarn workspace @heysuzy/preview check`.

@@ -19,6 +19,14 @@
       "types": "./dist/config.d.ts",
       "import": "./dist/config.js"
     },
+    "./analysis": {
+      "types": "./dist/analysis.d.ts",
+      "import": "./dist/analysis.js"
+    },
+    "./write": {
+      "types": "./dist/write.d.ts",
+      "import": "./dist/write.js"
+    },
     "./schema": "./preview.schema.json"
   },
   "files": [
@@ -33,6 +41,9 @@
     "typecheck": "tsc --noEmit",
     "test": "yarn build && node --test tests/*.test.mjs",
     "check": "biome check ."
+  },
+  "dependencies": {
+    "typescript": "^6.0.3"
   },
   "license": "MIT"
 }

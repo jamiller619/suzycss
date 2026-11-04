@@ -12,13 +12,13 @@ async function fixture(t) {
   t.after(() => rm(dir, { recursive: true, force: true }))
   return dir
 }
-test('no arguments work and a project discovers conventional entry/default output', async (t) => {
-  assert.match(await runCommand([], packageDir), /Project:/)
+test('no mandatory input/output and a project discovers conventional entry/default output', async (t) => {
   const dir = await fixture(t)
   await mkdir(join(dir, 'src'))
   await writeFile(join(dir, 'package.json'), '{}')
+  await writeFile(join(dir, 'from-cli.ts'), '')
   await writeFile(join(dir, 'src/index.ts'), '')
-  const result = await runCommand(['--root', dir], packageDir)
+  const result = await runCommand(['--root', dir, '--dry-run'], packageDir)
   assert.match(result, /Input: src\/index.ts/)
   assert.match(
     result,
@@ -32,6 +32,7 @@ test('CLI beats config', async (t) => {
   const nested = join(dir, 'settings')
   await mkdir(nested)
   await writeFile(join(dir, 'package.json'), '{}')
+  await writeFile(join(dir, 'from-cli.ts'), '')
   await writeFile(
     join(nested, 'preview.json'),
     JSON.stringify({
@@ -46,6 +47,7 @@ test('CLI beats config', async (t) => {
       join(nested, 'preview.json'),
       '--input',
       join(dir, 'from-cli.ts'),
+      '--dry-run',
     ],
     packageDir,
   )
@@ -59,7 +61,7 @@ test('ambiguity and validation errors are actionable', async (t) => {
   await writeFile(join(dir, 'src/index.ts'), '')
   await writeFile(join(dir, 'src/index.tsx'), '')
   await assert.rejects(
-    runCommand(['--root', dir], packageDir),
+    runCommand(['--root', dir, '--dry-run'], packageDir),
     /Ambiguous conventional source entry[\s\S]*--input/,
   )
   const malformed = join(dir, 'bad.json')

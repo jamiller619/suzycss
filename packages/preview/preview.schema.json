@@ -133,6 +133,26 @@
           ]
         },
         "required": { "type": "boolean" },
+        "description": { "type": "string" },
+        "properties": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/typeMetadata" }
+        },
+        "items": { "$ref": "#/$defs/typeMetadata" },
+        "branches": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/typeMetadata" }
+        },
+        "discriminator": { "type": "string" },
+        "source": {
+          "type": "object",
+          "required": ["path", "line"],
+          "properties": {
+            "path": { "type": "string" },
+            "line": { "type": "integer", "minimum": 1 }
+          },
+          "additionalProperties": false
+        },
         "enum": {
           "type": "array",
           "items": { "type": ["string", "number", "boolean", "null"] }
@@ -145,6 +165,7 @@
       "required": ["type"],
       "properties": {
         "type": { "$ref": "#/$defs/typeMetadata" },
+        "attribute": { "type": "string" },
         "default": { "$ref": "#/$defs/value" },
         "generated": { "$ref": "#/$defs/value" },
         "value": { "$ref": "#/$defs/value" },

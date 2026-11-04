@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "2.1.0",
+  "modules": [
+    {
+      "kind": "javascript-module",
+      "path": "src/elements.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "name": "UserChip",
+          "tagName": "user-chip",
+          "members": [
+            {
+              "kind": "field",
+              "name": "displayName",
+              "attribute": "display-name",
+              "type": { "text": "string" },
+              "description": "Name from CEM."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -8,6 +8,7 @@ export interface PreviewOptions {
   data: string
   runtime: string
   configPath?: string
+  inputKind: 'file' | 'directory' | 'automatic'
 }
 interface FileConfig {
   root?: string
@@ -60,6 +61,12 @@ export async function resolveOptions(cli: {
     : file.input
       ? resolve(configBase, file.input)
       : await discoverEntry(projectRoot)
+  const inputKind =
+    cli.input || file.input
+      ? (await stat(input)).isDirectory()
+        ? 'directory'
+        : 'file'
+      : 'automatic'
   const output = cli.output
     ? resolve(invocation, cli.output)
     : file.output
@@ -72,6 +79,7 @@ export async function resolveOptions(cli: {
     data: join(output, 'preview.json'),
     runtime: join(output, 'runtime'),
     configPath,
+    inputKind,
   }
 }
 export async function discoverEntry(root: string): Promise<string> {

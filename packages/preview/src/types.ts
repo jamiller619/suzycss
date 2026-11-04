@@ -40,9 +40,16 @@ export interface TypeMetadata {
     | 'unknown'
   required?: boolean
   enum?: JsonPrimitive[]
+  description?: string
+  properties?: Record<string, TypeMetadata>
+  items?: TypeMetadata
+  branches?: TypeMetadata[]
+  discriminator?: string
+  source?: { path: string; line: number }
 }
 export interface PropDefinition {
   type: TypeMetadata
+  attribute?: string
   default?: PreviewValue
   generated?: PreviewValue
   value?: PreviewValue

@@ -55,5 +55,38 @@ Unknown future schema versions fail validation and are never rewritten. Other
 unknown fields are rejected so misspellings are visible.
 
 Current scope is the configuration/discovery/document foundation. It does not
-yet analyze component ASTs, bundle modules, resolve descriptors, or render; those
-stages can consume an existing validated document without running discovery.
+yet bundle modules, resolve descriptors, or render; those stages can consume an
+existing validated document without running discovery.
+
+## Static discovery scope
+
+Analysis loads the project's `tsconfig.json` through the TypeScript 6 compiler
+API, so aliases, re-exports, imported prop types, and project compiler options
+participate in type checking. Explicit files inspect their supported exports;
+directories scan eligible JS/TS source files; automatic entries follow static
+imports and exports reachable from the entry. `node_modules`, `.preview`, and
+common `dist`, `build`, and `coverage` trees are excluded. Modules are parsed and
+type-checked but never executed.
+
+React support covers exported function/arrow components, default exports, and
+common `memo`/`React.memo` calls when JSX or a supported React return type is
+visible. Props include callbacks, children, destructuring defaults, nested
+objects/arrays, literal unions, and whole discriminated-union branches. Expansion
+is capped at five levels and 50 properties; circular, bounded generic, and
+unresolved shapes produce diagnostics rather than recursively expanding React or
+DOM internals.
+
+Web Component support requires a statically named `customElements.define()` and
+an `HTMLElement` subclass. Public typed fields and literal
+`observedAttributes` are included, with kebab/camel property mappings recorded.
+Dynamic registrations, arbitrary decorators, reflection behavior, and event
+contracts are not guessed; diagnostics direct developers to add or edit a
+component in `preview.json`. If `custom-elements.json` exists, matching CEM member
+types, descriptions, and attribute mappings override source inference; source
+identity, imports, and defaults remain authoritative.
+
+Running `suzy-preview` writes analysis through an atomic, revision-checked save.
+`--dry-run` only reports results. Until full reconciliation is implemented, a
+document containing developer values, non-default states, chosen generators or
+validators, wrappers, or `x-*` extensions is refused rather than destructively
+rewritten.
