@@ -1,0 +1,5 @@
+{
+  "root": ".",
+  "input": "src/index.tsx",
+  "output": ".preview"
+}

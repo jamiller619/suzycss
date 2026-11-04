@@ -1,0 +1,9 @@
+{
+  "name": "preview-consumer-web-components",
+  "private": true,
+  "type": "module",
+  "source": "src/index.ts",
+  "scripts": {
+    "preview": "suzy-preview"
+  }
+}

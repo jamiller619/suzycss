@@ -6,12 +6,21 @@ import { startPreviewServer } from './server.js'
 
 async function main() {
   const args = process.argv.slice(2)
-  if (args[0] !== 'serve') {
+  if (args[0] === 'generate') {
+    console.log(await runCommand(args.slice(1), process.cwd()))
+    return
+  }
+  if (args.includes('--validate') || args.includes('--dry-run')) {
     console.log(await runCommand(args, process.cwd()))
     return
   }
+  if (args.includes('--help') || args.includes('-h')) {
+    console.log(await runCommand(['--help'], process.cwd()))
+    return
+  }
+  const serveArgs = args[0] === 'serve' ? args.slice(1) : args
   const { values, positionals } = parseArgs({
-    args: args.slice(1),
+    args: serveArgs,
     allowPositionals: true,
     options: {
       config: { type: 'string' },

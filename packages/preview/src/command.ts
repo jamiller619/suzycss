@@ -9,18 +9,22 @@ import { writeAnalysis } from './write.js'
 
 export const help = `suzy-preview — local component previews without story files
 
-Usage: suzy-preview [options]
-       suzy-preview serve [options]
+Usage: suzy-preview [serve-options]
+       suzy-preview serve [serve-options]
+       suzy-preview generate [generation-options]
+       suzy-preview --validate <path>
 
   --config <path>    JSON configuration path
   --root <path>      Project root (default: nearest package.json)
   --input <path>     Source entry file or directory
   --output <path>    Output directory (default: <project-root>/.preview)
   --validate <path>  Validate an intermediate preview document
-  --dry-run          Analyze without writing preview.json
+  --dry-run          With generate: analyze without writing preview.json
   --help, -h         Show help
 
 Serve options additionally accept --port <number> and --host <address>.
+With no command or options, the explorer starts on port 3000 and creates the
+initial document when needed. Use generate to update the document and exit.
 
 CLI paths are relative to the invocation directory. Config values are relative
 to the config file. Precedence: CLI > config > default.`

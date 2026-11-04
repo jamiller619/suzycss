@@ -1,14 +1,22 @@
 # @heysuzy/preview
 
-Foundation for a local React and Web Component explorer. The executable is
+Local React and Web Component explorer without story files. The executable is
 `suzy-preview` (the npm scope does not determine its name).
 
 ```sh
-yarn workspace @heysuzy/preview build
-suzy-preview --input src/index.ts --output .preview
-suzy-preview --config preview.config.json
+npm install --save-dev @heysuzy/preview
+npx suzy-preview
+```
+
+Zero-option startup finds the project, discovers its entry, creates
+`.preview/preview.json` when absent, and starts the explorer at
+`http://127.0.0.1:3000`. Other useful commands are:
+
+```sh
+suzy-preview generate --input src/index.ts --output .preview
+suzy-preview --config preview.config.json --port 4173
 suzy-preview --validate .preview/preview.json
-suzy-preview serve --port 3000
+suzy-preview serve --port 3000 # explicit alias for the default command
 ```
 
 With no flags, the project root is the nearest directory containing
@@ -22,7 +30,11 @@ Input discovery takes the first unambiguous existing source file from:
 `default`, `module`, `main`, then `src/index.tsx`, `.ts`, `.jsx`, `.js`.
 Only literal JS/TS source mappings are read; config or package code is never
 evaluated. Ambiguous or missing input reports candidates and asks for `--input`.
-An explicit input may be a file or directory.
+An explicit input may be a file or directory. A JSON config supports `root`,
+`input`, and `output`. Config paths resolve from the config file; CLI paths
+resolve from the invocation directory. Precedence is CLI, then config, then the
+documented default. `generate` analyzes/reconciles and exits; `--dry-run` does
+the same without writing.
 
 ## Intermediate document contract
 
@@ -54,6 +66,16 @@ atomic save. A mismatch is a conflict and must abort/reload, never last-write-wi
 `baseRevision` records the regenerated ancestor. Unknown `x-*` fields survive.
 Unknown future schema versions fail validation and are never rewritten. Other
 unknown fields are rejected so misspellings are visible.
+
+The practical consumer projects under [`examples/consumers`](examples/consumers)
+contain the supported React and Web Component patterns. Keep the generated
+`$schema` property for editor completion. Schema version 1 is the only accepted
+version in this release.
+
+When developing this package in the Suzy monorepo, run `yarn preview` from the
+repository root. It rebuilds and watches the package while serving the React
+consumer fixture. Pass server flags through directly, such as
+`yarn preview --port 4173`.
 
 The server and explorer consume an existing validated document without running
 discovery. Analysis remains a separate source-change workflow.
@@ -242,3 +264,114 @@ explicit **Merge external changes** and **Reload from disk** choices. Merge uses
 the persistence three-way reconciliation and keeps conflicts in the document
 for review. Save remains disabled for invalid drafts or unresolved external
 changes, so a stale browser cannot silently overwrite an editor write.
+
+## Extensions, wrappers, and manual escape hatches
+
+A custom generator and validator are ordinary trusted local exports referenced
+without executable JSON strings:
+
+```json
+{
+  "generator": {
+    "$ref": "generator",
+    "name": "fixture-balance",
+    "module": {
+      "$ref": "module",
+      "path": "preview-extensions.mjs",
+      "export": "balanceGenerator"
+    }
+  },
+  "validators": [
+    {
+      "$ref": "validator",
+      "module": {
+        "$ref": "module",
+        "path": "preview-extensions.mjs",
+        "export": "nonNegative"
+      }
+    }
+  ]
+}
+```
+
+Module paths are project-relative. Generator output must be JSON-serializable;
+validators return `true`/`undefined` or an error string. Exceptions, missing
+exports, and invalid output become diagnostics. These modules are trusted local
+project code and are loaded only for their declared role.
+
+Add project-wide styles and providers/wrappers in the document:
+
+```json
+{
+  "runtime": {
+    "styles": ["src/preview.css"],
+    "providers": [
+      { "$ref": "module", "path": "src/PreviewProvider.tsx", "export": "PreviewProvider" }
+    ],
+    "wrapper": { "$ref": "module", "path": "src/Frame.tsx", "export": "Frame" }
+  }
+}
+```
+
+Component and state `wrapper` references are also supported. For Web Components,
+`runtime.webComponents[component-id]` is the escape hatch for property names,
+attribute mappings, and event names that static analysis cannot establish.
+Dynamic registrations and decorator/reflection/event semantics are never guessed.
+
+## Two correction workflows
+
+After `suzy-preview generate`, correct generated data directly in JSON by adding
+developer-owned `value` next to `generated`:
+
+```json
+"outstandingBalance": {
+  "type": { "text": "number", "kind": "number", "required": true },
+  "generated": 4821.17,
+  "value": 1250
+}
+```
+
+Save `.preview/preview.json`; the running explorer validates and reloads it.
+Future regeneration updates `generated` but preserves `value`. Delete `value` to
+reset to generated data. Use `{ "$ref": "omit" }` for explicit omission; JSON
+`null` remains a real null.
+
+To make the same correction in the page, open `BillingCard`, choose **Override
+value** for `outstandingBalance`, enter `1250`, and press **Save**. The preview
+updates as soon as the draft validates; Save writes the same `value` field using
+the revision-aware persistence API. Use **Save state** first when the correction
+should belong to a named state instead of the component baseline.
+
+## Supported environments and boundaries
+
+- Node.js 22.12 or newer, ESM packages, TypeScript/JavaScript source, and Vite 7.
+- React 18.2 or 19 with `react` and `react-dom` installed in the consumer.
+  Exported function/arrow components, default functions, and common `memo`
+  wrappers are supported. Class components, arbitrary higher-order wrappers,
+  runtime export factories, and complete React/DOM type expansion are not.
+- Web Components require a statically resolvable `customElements.define()` and
+  an `HTMLElement` subclass. Typed public fields and literal
+  `observedAttributes` are supported; matching Custom Elements Manifest member
+  metadata takes precedence for descriptions/types/mappings. Dynamic tags,
+  arbitrary decorators, reflection, and event contracts require manual config.
+- Vite handles normal aliases, CSS, static assets, dependencies, and the
+  documented `tsconfig` mappings. Framework-specific compiler plugins,
+  nonstandard resolvers, SSR-only modules, and every possible Vite plugin are
+  outside the verified contract.
+- Custom-element source updates reload the isolated preview document to obtain a
+  fresh registry. Custom-element state-preserving HMR is not supported.
+
+## Troubleshooting
+
+- **No entry or ambiguous entry:** pass `--input <file-or-directory>` or set
+  `input` in `preview.config.json`; the error lists considered candidates.
+- **Invalid JSON or field validation:** the file remains untouched and the last
+  valid preview stays active. Correct the path shown in diagnostics and save.
+- **Stale save/external edit:** choose merge to reconcile the browser draft with
+  disk, or reload to discard the draft. The UI never silently overwrites it.
+- **Unsupported component/type:** use the structured editor to add a component,
+  value, descriptor, mapping, or local generator manually. Diagnostics are the
+  support boundary, not a promise of universal inference.
+- **Render/import error:** inspect the isolated frame diagnostic and project Vite
+  output. Navigation remains usable; fixing the source/config recovers without
+  replacing the editable document.

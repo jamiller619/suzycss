@@ -522,6 +522,30 @@ function runtimeModule(
         `import ${JSON.stringify(`${moduleUrl(root, path)}?suzy=${version}`)}`,
     )
     .join('\n')
+  const reactMount = document.components.some(
+    (component) => component.framework === 'react',
+  )
+    ? `async function mountReact(component, state, config) {
+  const [{ default: React }, { createRoot }] = await Promise.all([import('react'), import('react-dom/client')])
+  const module = await import(/* @vite-ignore */ pathUrl(component.import.path))
+  const Component = module[component.import.export]
+  if (!Component) throw new Error('Missing component export ' + component.import.export)
+  const props = await resolvedProps(component, state, React)
+  const references = [...(config.runtime?.providers ?? []), config.runtime?.wrapper, component.wrapper, state?.wrapper].filter(Boolean)
+  const wrappers = await Promise.all(references.map(imported))
+  let child = React.createElement(Component, props)
+  for (let index = wrappers.length - 1; index >= 0; index--) child = React.createElement(wrappers[index], null, child)
+  class Boundary extends React.Component {
+    constructor(props) { super(props); this.state = { error: null } }
+    static getDerivedStateFromError(error) { return { error } }
+    componentDidCatch(error) { post('error', { message: error.message, stack: error.stack, componentId: component.id }) }
+    render() { return this.state.error ? React.createElement('pre', { className: 'preview-error' }, this.state.error.message) : this.props.children }
+  }
+  const reactRoot = createRoot(rootNode)
+  reactRoot.render(React.createElement(Boundary, null, child))
+  cleanup = () => reactRoot.unmount()
+}`
+    : `async function mountReact() { throw new Error('React is not configured in this preview document') }`
   return `${styles}
 const CHANNEL = 'heysuzy-preview'
 const VERSION = 1
@@ -585,26 +609,7 @@ async function resolvedProps(component, state, React) {
   }
   return Object.fromEntries(entries)
 }
-async function mountReact(component, state, config) {
-  const [{ default: React }, { createRoot }] = await Promise.all([import('react'), import('react-dom/client')])
-  const module = await import(/* @vite-ignore */ pathUrl(component.import.path))
-  const Component = module[component.import.export]
-  if (!Component) throw new Error('Missing component export ' + component.import.export)
-  const props = await resolvedProps(component, state, React)
-  const references = [...(config.runtime?.providers ?? []), config.runtime?.wrapper, component.wrapper, state?.wrapper].filter(Boolean)
-  const wrappers = await Promise.all(references.map(imported))
-  let child = React.createElement(Component, props)
-  for (let index = wrappers.length - 1; index >= 0; index--) child = React.createElement(wrappers[index], null, child)
-  class Boundary extends React.Component {
-    constructor(props) { super(props); this.state = { error: null } }
-    static getDerivedStateFromError(error) { return { error } }
-    componentDidCatch(error) { post('error', { message: error.message, stack: error.stack, componentId: component.id }) }
-    render() { return this.state.error ? React.createElement('pre', { className: 'preview-error' }, this.state.error.message) : this.props.children }
-  }
-  const reactRoot = createRoot(rootNode)
-  reactRoot.render(React.createElement(Boundary, null, child))
-  cleanup = () => reactRoot.unmount()
-}
+${reactMount}
 async function mountWeb(component, state, config) {
   await import(/* @vite-ignore */ pathUrl(component.import.path))
   const tag = component.source.tagName

@@ -9,6 +9,7 @@
   "scripts": {
     "build": "yarn workspace @heysuzy/compiler build && yarn workspace @heysuzy/components build && yarn workspace @heysuzy/inline-css-modules build && yarn workspace @heysuzy/preview build",
     "dev": "yarn workspace @heysuzy/compiler dev",
+    "preview": "yarn workspace @heysuzy/preview dev",
     "typecheck": "yarn workspace @heysuzy/compiler typecheck && yarn workspace @heysuzy/components typecheck && yarn workspace @heysuzy/preview typecheck",
     "test": "yarn workspace @heysuzy/compiler test && yarn workspace @heysuzy/inline-css-modules test && yarn workspace @heysuzy/preview test",
     "test:browser": "yarn workspace @heysuzy/compiler test:browser",

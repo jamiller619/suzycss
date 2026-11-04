@@ -19,3 +19,8 @@ yarn install --frozen-lockfile
 yarn build
 yarn test
 ```
+
+To work on the component explorer UI, run `yarn preview`. It builds the preview
+package, watches its TypeScript sources, and serves the realistic React example
+at `http://127.0.0.1:3000`. Extra CLI options pass through, for example
+`yarn preview --port 4173`.

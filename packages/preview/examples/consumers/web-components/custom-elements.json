@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "2.1.0",
+  "modules": [
+    {
+      "kind": "javascript-module",
+      "path": "src/account-chip.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "name": "AccountChip",
+          "tagName": "account-chip",
+          "members": [
+            {
+              "kind": "field",
+              "name": "displayName",
+              "attribute": "display-name",
+              "type": { "text": "string" },
+              "description": "Visible account owner name."
+            },
+            {
+              "kind": "field",
+              "name": "account",
+              "type": { "text": "{ id: string; plan: 'pro' }" }
+            }
+          ],
+          "events": [
+            {
+              "name": "account-select",
+              "type": { "text": "CustomEvent<{ account: { id: string } }>" }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
