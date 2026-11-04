@@ -88,6 +88,69 @@ function documentFixture() {
             type: { text: 'boolean', kind: 'boolean', required: false },
             generated: false,
           },
+          audience: {
+            type: {
+              text: 'PersonAudience | TeamAudience',
+              kind: 'object',
+              required: true,
+              discriminator: 'kind',
+              branches: [
+                {
+                  text: 'PersonAudience',
+                  kind: 'object',
+                  properties: {
+                    kind: {
+                      text: "'person'",
+                      kind: 'string',
+                      required: true,
+                      enum: ['person'],
+                    },
+                    profile: {
+                      text: 'Profile',
+                      kind: 'object',
+                      required: true,
+                      properties: {
+                        address: {
+                          text: 'Address',
+                          kind: 'object',
+                          required: true,
+                          properties: {
+                            city: {
+                              text: 'string',
+                              kind: 'string',
+                              required: true,
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+                {
+                  text: 'TeamAudience',
+                  kind: 'object',
+                  properties: {
+                    kind: {
+                      text: "'team'",
+                      kind: 'string',
+                      required: true,
+                      enum: ['team'],
+                    },
+                    members: {
+                      text: 'string[]',
+                      kind: 'array',
+                      required: true,
+                      items: { text: 'string', kind: 'string', required: true },
+                    },
+                  },
+                },
+              ],
+            },
+            generated: {
+              kind: 'person',
+              profile: { address: { city: 'Boston' } },
+            },
+          },
         },
         states: [
           { name: 'default', generated: true },
@@ -241,7 +304,7 @@ test('server renders both actual frameworks and recovers across edits/failures',
     .locator('.preview-error')
     .filter({ hasText: 'Intentional component failure' })
     .waitFor()
-  assert.equal(await page.getByRole('button').count(), 2)
+  assert.equal(await page.locator('#components button').count(), 2)
   await page.getByRole('button', { name: 'UserChip', exact: true }).click()
   await frame.locator('.actual-web').waitFor()
 
@@ -254,4 +317,132 @@ test('server renders both actual frameworks and recovers across edits/failures',
     body: '{}',
   })
   assert.equal(forbidden.status, 403)
+})
+
+test('explorer edits, validates, persists, and resolves external changes', {
+  timeout: 45_000,
+}, async (t) => {
+  const { data, server } = await fixture(t)
+  const browser = await chromium.launch({ headless: true })
+  t.after(() => browser.close())
+  const page = await browser.newPage()
+  page.setDefaultTimeout(10_000)
+  await page.goto(server.url)
+
+  const card = page.getByRole('button', { name: 'Card', exact: true })
+  await card.waitFor()
+  await card.focus()
+  await page.keyboard.press('ArrowDown')
+  assert.equal(
+    await page.evaluate(() =>
+      document.activeElement?.getAttribute('aria-label'),
+    ),
+    'UserChip',
+  )
+  await page.keyboard.press('ArrowUp')
+
+  await page.getByLabel('audience value source').selectOption('override')
+  await page.getByLabel('audience union branch').selectOption({ label: 'team' })
+  const frame = page.frameLocator('#preview-frame')
+  const audience = page.getByLabel('audience structured value')
+  await audience.fill(
+    JSON.stringify({ kind: 'team', members: ['Mira'] }, null, 2),
+  )
+  await audience.blur()
+  await frame.locator('.audience').filter({ hasText: 'team: Mira' }).waitFor()
+  await page.locator('#save-status').filter({ hasText: 'Unsaved' }).waitFor()
+
+  await audience.fill('{')
+  await audience.blur()
+  await page
+    .locator('#save-status')
+    .filter({ hasText: 'Invalid draft' })
+    .waitFor()
+  assert.equal(await audience.inputValue(), '{')
+  assert.match(await frame.locator('.audience').textContent(), /team: Mira/)
+  await audience.fill(
+    JSON.stringify({ kind: 'team', members: ['Mira', 'Sam'] }, null, 2),
+  )
+  await audience.blur()
+  await frame.locator('.audience').filter({ hasText: 'Mira, Sam' }).waitFor()
+
+  await page.getByLabel('children value source').selectOption('override')
+  const childValue = page.getByLabel(/children (descriptor|structured) value/)
+  await childValue.fill(JSON.stringify('short'))
+  await childValue.blur()
+  const rules = page.getByLabel('children validation rules')
+  await rules.fill(
+    JSON.stringify(
+      [{ $ref: 'validator', name: 'minLength', options: { value: 10 } }],
+      null,
+      2,
+    ),
+  )
+  await rules.blur()
+  await page
+    .locator('[data-prop="children"] .field-error')
+    .filter({ hasText: /length/i })
+    .waitFor()
+  assert.match(await frame.locator('.content').textContent(), /short/)
+  const corrected = page.getByLabel(/children (descriptor|structured) value/)
+  await corrected.fill(JSON.stringify('long enough child'))
+  await corrected.blur()
+  await frame
+    .locator('.content')
+    .filter({ hasText: 'long enough child' })
+    .waitFor()
+
+  await page
+    .locator('[data-prop="onPress"]')
+    .getByRole('button', { name: 'Regenerate field' })
+    .click()
+  assert.match(await frame.locator('.audience').textContent(), /Mira, Sam/)
+
+  await page.locator('#new-state-name').fill('custom team')
+  await page.getByRole('button', { name: 'Save state' }).click()
+  await page
+    .locator('#state-select')
+    .selectOption({ label: 'custom team · named' })
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  await page.locator('#save-status').filter({ hasText: 'Saved' }).waitFor()
+  await page.reload()
+  await page
+    .locator('#state-select')
+    .selectOption({ label: 'custom team · named' })
+  await frame.locator('.audience').filter({ hasText: 'Mira, Sam' }).waitFor()
+
+  await page
+    .getByLabel('audience structured value')
+    .fill(JSON.stringify({ kind: 'team', members: ['Local draft'] }, null, 2))
+  await page.getByLabel('audience structured value').blur()
+  const external = JSON.parse(await readFile(data, 'utf8'))
+  external.components[1].props.displayName.value = 'External editor'
+  await writeFile(data, `${JSON.stringify(external, null, 2)}\n`)
+  await page
+    .locator('#external-banner')
+    .filter({ hasText: 'changed outside' })
+    .waitFor()
+  assert.match(
+    await page.getByLabel('audience structured value').inputValue(),
+    /Local draft/,
+  )
+  await page.getByRole('button', { name: 'Merge external changes' }).click()
+  await page.locator('#external-banner').waitFor({ state: 'hidden' })
+  assert.match(
+    await page.getByLabel('audience structured value').inputValue(),
+    /Local draft/,
+  )
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  await page.locator('#save-status').filter({ hasText: 'Saved' }).waitFor()
+
+  const persisted = JSON.parse(await readFile(data, 'utf8'))
+  assert.equal(
+    persisted.components[1].props.displayName.value,
+    'External editor',
+  )
+  assert.ok(
+    persisted.components[0].states.some(
+      (state) => state.name === 'custom team',
+    ),
+  )
 })

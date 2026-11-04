@@ -46,6 +46,21 @@
 - Runtime mutation is intentionally narrow: same-origin + random token +
   revision/etag can update only the configured preview document. No route accepts
   an arbitrary path. Event logs are circular-safe and capped at 200 entries.
+- The explorer is a compiled TypeScript client loaded by the virtual shell. It
+  edits a cloned document and uses server validation, regeneration, merge, and
+  revision-aware persistence APIs; the iframe consumes only the last valid draft.
+- Nested data and advanced contract fields use validated JSON controls rather
+  than an expanding collection of lossy special-purpose widgets. Arrays are
+  labeled as complete dataset replacement, while union branches get a focused
+  discriminator selector.
+- A revision-scoped valid draft is cached in same-origin local storage so Vite's
+  dependency-optimization reload cannot discard unsaved work. Initial document
+  load replaces stale revisions; invalid text is retained only in live editor
+  state and never becomes the rendered configuration.
+- External disk events auto-adopt only into clean views. Dirty views stage the
+  external revision and require merge or reload; Save is disabled until that
+  decision is made. Vite dependency/build outputs are excluded from source
+  analysis watches to avoid false external-change conflicts.
 
 Focused verification: `yarn workspace @heysuzy/preview test` and
 `yarn workspace @heysuzy/preview run check`.

@@ -3,6 +3,7 @@ import { type Dirent, type FSWatcher, watch as watchDirectory } from 'node:fs'
 import { readdir, readFile } from 'node:fs/promises'
 import { createServer as createNetServer } from 'node:net'
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import * as ts from 'typescript'
 import {
   type Alias,
@@ -12,8 +13,10 @@ import {
 } from 'vite'
 import { analyzeProject } from './analysis.js'
 import type { PreviewOptions } from './config.js'
+import { assertDocument } from './document.js'
 import { generateDocumentMocks } from './mock.js'
-import { DocumentStore } from './persistence.js'
+import { DocumentStore, validateDocumentSemantics } from './persistence.js'
+import { reconcileDocuments } from './reconcile.js'
 import type { PreviewDocument } from './types.js'
 
 export interface PreviewServer {
@@ -37,6 +40,7 @@ export async function startPreviewServer(
   serverOptions: PreviewServerOptions = {},
 ): Promise<PreviewServer> {
   const token = randomBytes(24).toString('hex')
+  const packageRuntime = dirname(fileURLToPath(import.meta.url))
   const host = serverOptions.host ?? '127.0.0.1'
   const port =
     serverOptions.port === 0
@@ -131,7 +135,7 @@ export async function startPreviewServer(
           options.projectRoot,
           runtimeVersion,
         )
-      if (id === resolvedShellId) return shellModule(token)
+      if (id === resolvedShellId) return shellModule(token, packageRuntime)
     },
     configureServer(server) {
       server.middlewares.use(async (request, response, next) => {
@@ -155,6 +159,99 @@ export async function startPreviewServer(
             revision: activeDocument.provenance.revision,
             diskStatus: disk.status,
           })
+          return
+        }
+        if (
+          request.method === 'POST' &&
+          url.pathname === '/__preview/api/validate'
+        ) {
+          if (!validMutationRequest(request, token)) {
+            sendJson(response, 403, {
+              error: 'Forbidden validation origin or token.',
+            })
+            return
+          }
+          try {
+            const body = (await readJsonBody(request, 2_000_000)) as {
+              document: PreviewDocument
+            }
+            assertDocument(body.document)
+            const diagnostics = await validateDocumentSemantics(
+              body.document,
+              options.projectRoot,
+            )
+            sendJson(response, 200, {
+              valid: diagnostics.length === 0,
+              diagnostics,
+            })
+          } catch (error) {
+            sendJson(response, 200, {
+              valid: false,
+              diagnostics: [
+                {
+                  severity: 'error',
+                  code: 'document-invalid',
+                  path: '$',
+                  message: (error as Error).message,
+                },
+              ],
+            })
+          }
+          return
+        }
+        if (
+          request.method === 'POST' &&
+          url.pathname === '/__preview/api/regenerate'
+        ) {
+          if (!validMutationRequest(request, token)) {
+            sendJson(response, 403, {
+              error: 'Forbidden regeneration origin or token.',
+            })
+            return
+          }
+          try {
+            const body = (await readJsonBody(request, 2_000_000)) as {
+              document: PreviewDocument
+              paths?: string[]
+            }
+            assertDocument(body.document)
+            const result = await generateDocumentMocks(body.document, {
+              projectRoot: options.projectRoot,
+              paths: body.paths,
+            })
+            sendJson(response, 200, result)
+          } catch (error) {
+            sendJson(response, 400, { error: (error as Error).message })
+          }
+          return
+        }
+        if (
+          request.method === 'POST' &&
+          url.pathname === '/__preview/api/merge-draft'
+        ) {
+          if (!validMutationRequest(request, token)) {
+            sendJson(response, 403, {
+              error: 'Forbidden merge origin or token.',
+            })
+            return
+          }
+          try {
+            const body = (await readJsonBody(request, 4_000_000)) as {
+              baseline: PreviewDocument
+              draft: PreviewDocument
+            }
+            assertDocument(body.baseline)
+            assertDocument(body.draft)
+            const result = await reconcileDocuments(
+              body.baseline,
+              body.draft,
+              activeDocument,
+              options.projectRoot,
+            )
+            sendJson(response, 200, result)
+          } catch (error) {
+            sendJson(response, 400, { error: (error as Error).message })
+          }
           return
         }
         if (
@@ -208,7 +305,9 @@ export async function startPreviewServer(
       host: serverOptions.host ?? '127.0.0.1',
       port,
       strictPort: false,
-      fs: { allow: [options.projectRoot, dirname(options.data)] },
+      fs: {
+        allow: [options.projectRoot, dirname(options.data), packageRuntime],
+      },
     },
   })
   const watch = async (file: string) => {
@@ -224,6 +323,9 @@ export async function startPreviewServer(
       return
     }
     if (!inside(options.projectRoot, file) || inside(options.output, file))
+      return
+    const projectPath = relative(options.projectRoot, file).split(sep).join('/')
+    if (/(^|\/)(?:node_modules|dist|build|coverage)(?:\/|$)/.test(projectPath))
       return
     if (/\.(?:css|scss|sass|less|styl|stylus)$/.test(file)) {
       updateRuntime()
@@ -247,9 +349,7 @@ export async function startPreviewServer(
     }
     if (
       sourcePattern.test(file) ||
-      ['tsconfig.json', 'package.json'].includes(
-        relative(options.projectRoot, file),
-      )
+      ['tsconfig.json', 'package.json'].includes(projectPath)
     )
       scheduleAnalysis()
   }
@@ -531,7 +631,12 @@ async function mountWeb(component, state, config) {
 async function start() {
   const response = await fetch('/__preview/api/document', { cache: 'no-store' })
   if (!response.ok) throw new Error('Could not load preview document')
-  const { document: config } = await response.json()
+  const body = await response.json()
+  let config = body.document
+  const sessionDraft = localStorage.getItem('heysuzy-preview-valid-draft')
+  if (sessionDraft) {
+    try { config = JSON.parse(sessionDraft) } catch { localStorage.removeItem('heysuzy-preview-valid-draft') }
+  }
   const query = new URLSearchParams(location.search)
   const component = config.components.find((item) => item.id === query.get('component')) ?? config.components[0]
   if (!component) throw new Error('No component selected')
@@ -556,68 +661,16 @@ start().catch((error) => {
 `
 }
 
-function shellModule(token: string): string {
-  return `
-const CHANNEL = 'heysuzy-preview'
-const VERSION = 1
-const TOKEN = ${JSON.stringify(token)}
-const list = document.querySelector('#components')
-const frame = document.querySelector('#preview-frame')
-const diagnostics = document.querySelector('#diagnostics')
-const events = document.querySelector('#events')
-let selected
-let documentValue
-let reload = 0
-function frameUrl() {
-  if (!selected) return 'about:blank'
-  const query = new URLSearchParams({ component: selected.id, state: selected.states[0]?.name ?? 'default', reload: String(reload++) })
-  return '/__preview/frame?' + query
-}
-function loadFrame() { frame.src = frameUrl() }
-function renderList() {
-  list.replaceChildren(...documentValue.components.map((component) => {
-    const button = document.createElement('button')
-    button.type = 'button'
-    button.textContent = component.name
-    button.dataset.componentId = component.id
-    button.addEventListener('click', () => { selected = component; loadFrame() })
-    return button
-  }))
-}
-async function loadDocument() {
-  const response = await fetch('/__preview/api/document', { cache: 'no-store' })
-  const body = await response.json()
-  documentValue = body.document
-  selected = documentValue.components.find((item) => item.id === selected?.id) ?? documentValue.components[0]
-  renderList()
-  loadFrame()
-}
-function log(entry) {
-  const item = document.createElement('li')
-  item.textContent = JSON.stringify(entry)
-  events.prepend(item)
-  while (events.children.length > 200) events.lastElementChild.remove()
-}
-window.addEventListener('message', (event) => {
-  if (event.origin !== location.origin || event.source !== frame.contentWindow) return
-  const message = event.data
-  if (!message || message.channel !== CHANNEL || message.version !== VERSION || !['ready', 'error', 'event', 'reload-required'].includes(message.type)) return
-  if (message.type === 'event') log(message.payload)
-  if (message.type === 'error') diagnostics.textContent = message.payload.message
-  if (message.type === 'ready') diagnostics.textContent = ''
-  if (message.type === 'reload-required') loadFrame()
-})
-if (import.meta.hot) {
-  import.meta.hot.on('suzy:config', () => loadDocument())
-  import.meta.hot.on('suzy:diagnostic', (data) => { diagnostics.textContent = data.message })
-}
-window.__SUZY_PREVIEW__ = { token: TOKEN, reload: loadDocument }
-loadDocument().catch((error) => { diagnostics.textContent = error.message })
-`
+function shellModule(token: string, packageRuntime: string): string {
+  const client = moduleUrl(packageRuntime, 'explorer-client.js')
+  return `globalThis.__SUZY_PREVIEW_TOKEN__ = ${JSON.stringify(token)}; import(${JSON.stringify(client)});`
 }
 
 function shellHtml(): string {
-  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Suzy Preview</title><style>html{font:14px system-ui;color:#18181b}body{margin:0;display:grid;grid-template-columns:16rem 1fr;min-height:100vh}aside{padding:1rem;border-right:1px solid #ddd}button{display:block;width:100%;margin:.25rem 0;padding:.5rem;text-align:left}main{display:grid;grid-template-rows:auto minmax(20rem,1fr) auto;padding:1rem;gap:.75rem}iframe{border:1px solid #ddd;width:100%;height:100%;background:white}#diagnostics{color:#b42318;white-space:pre-wrap}#events{max-height:10rem;overflow:auto;font:12px ui-monospace}</style></head><body><aside><h1>Components</h1><nav id="components"></nav></aside><main><div id="diagnostics" role="status"></div><iframe id="preview-frame" title="Component preview" sandbox="allow-scripts allow-same-origin"></iframe><details><summary>Events</summary><ol id="events"></ol></details></main><script type="module" src="/@id/${shellId}"></script></body></html>`
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Suzy Preview</title><style>
+:root{font:14px/1.4 system-ui,sans-serif;color:#18181b;background:#fff;--border:#d4d4d8;--muted:#71717a;--soft:#f4f4f5;--danger:#b42318;--accent:#4338ca}*{box-sizing:border-box}body{margin:0;min-height:100vh}button,input,select,textarea{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.app{display:grid;grid-template-columns:15rem minmax(20rem,1fr) 22rem;min-height:100vh}.sidebar,.editor{padding:1rem;overflow:auto}.sidebar{border-right:1px solid var(--border)}.editor{border-left:1px solid var(--border);max-height:100vh}.brand{font-size:1rem;margin:0 0 1rem}.component-button{display:flex;width:100%;border:0;background:transparent;padding:.5rem;border-radius:.25rem;text-align:left;justify-content:space-between}.component-button:hover,.component-button[aria-current=true]{background:var(--soft)}.framework{font-size:.75rem;color:var(--muted)}main{display:grid;grid-template-rows:auto auto minmax(18rem,1fr) auto;gap:.75rem;padding:1rem;min-width:0}.toolbar,.editor-toolbar,.row,.actions{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}.toolbar{justify-content:space-between}.status{font-size:.8rem;color:var(--muted)}.status.dirty{color:#9a3412}.status.saved{color:#166534}.banner,#diagnostics{padding:.6rem;border-radius:.25rem;background:#fff7ed;color:#9a3412;white-space:pre-wrap}.banner[hidden],#diagnostics:empty{display:none}.preview-wrap{min-height:20rem}iframe{border:1px solid var(--border);width:100%;height:100%;min-height:20rem;background:white}.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:1rem}.tab{border:0;background:transparent;padding:.5rem .75rem}.tab[aria-selected=true]{border-bottom:2px solid var(--accent);font-weight:600}.prop-card{border-bottom:1px solid var(--border);padding:.75rem 0}.prop-head{display:flex;justify-content:space-between;gap:.5rem}.prop-name{font-weight:600}.badge{font-size:.7rem;border:1px solid var(--border);border-radius:1rem;padding:.1rem .4rem;color:var(--muted)}label{display:block;font-size:.8rem;color:#3f3f46;margin-top:.5rem}input,select,textarea{width:100%;border:1px solid var(--border);border-radius:.25rem;padding:.4rem;background:#fff;color:inherit}input[type=checkbox]{width:auto}textarea{min-height:6rem;font:12px/1.4 ui-monospace,monospace;resize:vertical}.field-error{color:var(--danger);font-size:.78rem;margin:.25rem 0}.secondary{border:1px solid var(--border);background:#fff;border-radius:.25rem;padding:.35rem .55rem}.primary{border:1px solid #3730a3;background:var(--accent);color:#fff;border-radius:.25rem;padding:.4rem .7rem}.danger{color:var(--danger)}button:disabled{cursor:not-allowed;opacity:.5}.json-editor{min-height:55vh}.event-log{max-height:10rem;overflow:auto;font:12px ui-monospace;margin:0;padding-left:1.5rem}.empty{color:var(--muted);font-style:italic}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:1000px){.app{grid-template-columns:13rem 1fr}.editor{grid-column:1/-1;border-left:0;border-top:1px solid var(--border);max-height:none}}@media(max-width:650px){.app{display:block}.sidebar{border-right:0;border-bottom:1px solid var(--border)}main{min-height:70vh}.editor{border-left:0}}
+</style></head><body><div class="app"><aside class="sidebar"><h1 class="brand">Suzy Preview</h1><nav id="components" aria-label="Components"></nav></aside><main><div id="external-banner" class="banner" hidden></div><div class="toolbar"><div class="row"><label for="state-select" class="sr-only">Preview state</label><select id="state-select" aria-label="Preview state"></select><input id="new-state-name" aria-label="New state name" placeholder="New state name"><button id="save-state" class="secondary" type="button">Save state</button></div><div class="actions"><span id="save-status" class="status saved">Saved</span><button id="regenerate-component" class="secondary" type="button">Regenerate unpinned</button><button id="save-document" class="primary" type="button">Save</button></div></div><div id="diagnostics" role="status" aria-live="polite"></div><div class="preview-wrap"><iframe id="preview-frame" title="Component preview" sandbox="allow-scripts allow-same-origin"></iframe></div><details><summary>Callbacks and events</summary><ol id="events" class="event-log"></ol></details></main><aside class="editor"><div class="tabs" role="tablist"><button id="controls-tab" class="tab" role="tab" aria-selected="true" type="button">Controls</button><button id="json-tab" class="tab" role="tab" aria-selected="false" type="button">JSON</button></div><section id="controls-panel" role="tabpanel"><div id="props"></div></section><section id="json-panel" role="tabpanel" hidden><label for="json-editor">Intermediate document</label><textarea id="json-editor" class="json-editor" spellcheck="false"></textarea><div id="json-errors" class="field-error"></div><div class="actions"><button id="apply-json" class="secondary" type="button">Validate and apply</button></div></section></aside></div><script type="module" src="/@id/${shellId}"></script></body></html>`
 }
 function frameHtml(): string {
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><style>html,body,#root{min-height:100%;margin:0}.preview-error{color:#b42318;white-space:pre-wrap;padding:1rem}</style></head><body><div id="root"></div><script type="module" src="/@id/${runtimeId}"></script></body></html>`

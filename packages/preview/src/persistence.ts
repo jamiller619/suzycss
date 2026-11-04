@@ -79,7 +79,10 @@ export class DocumentStore {
           etag,
         }
       }
-      const diagnostics = await semanticDiagnostics(document, this.projectRoot)
+      const diagnostics = await validateDocumentSemantics(
+        document,
+        this.projectRoot,
+      )
       if (diagnostics.length) {
         return {
           status: 'invalid',
@@ -116,7 +119,10 @@ export class DocumentStore {
           `Stale save: expected revision ${expected.revision} and etag ${expected.etag}, found revision ${disk.document.provenance.revision} and etag ${disk.etag}. Reload before saving.`,
         )
       assertDocument(proposed)
-      const semantic = await semanticDiagnostics(proposed, this.projectRoot)
+      const semantic = await validateDocumentSemantics(
+        proposed,
+        this.projectRoot,
+      )
       if (semantic.length)
         throw new InvalidDiskDocumentError(
           `Proposed document is invalid:\n${semantic.map((item) => `  ${item.path}: ${item.message}`).join('\n')}`,
@@ -161,7 +167,7 @@ export class DocumentStore {
   ): Promise<RegenerationResult> {
     return this.exclusive(async () => {
       assertDocument(generated)
-      const generatedSemantic = await semanticDiagnostics(
+      const generatedSemantic = await validateDocumentSemantics(
         generated,
         this.projectRoot,
       )
@@ -177,7 +183,7 @@ export class DocumentStore {
         disk.status === 'valid' &&
         disk.document.provenance.baseline?.fingerprint === fingerprint
       ) {
-        const semantic = await semanticDiagnostics(
+        const semantic = await validateDocumentSemantics(
           disk.document,
           this.projectRoot,
         )
@@ -231,7 +237,7 @@ export class DocumentStore {
         generated,
         this.projectRoot,
       )
-      const mergedSemantic = await semanticDiagnostics(
+      const mergedSemantic = await validateDocumentSemantics(
         reconciliation.document,
         this.projectRoot,
       )
@@ -312,7 +318,10 @@ export class DocumentStore {
       throw new InvalidDiskDocumentError(
         'The editable document is missing, malformed, or structurally invalid.',
       )
-    const semantic = await semanticDiagnostics(disk.document, this.projectRoot)
+    const semantic = await validateDocumentSemantics(
+      disk.document,
+      this.projectRoot,
+    )
     if (semantic.length || disk.document.conflicts?.length)
       throw new InvalidDiskDocumentError(
         'The editable document is invalid or conflicted and was left untouched.',
@@ -414,7 +423,7 @@ async function writeImmutableBaseline(path: string, content: string) {
     await atomicReplace(path, content, undefined)
   }
 }
-async function semanticDiagnostics(
+export async function validateDocumentSemantics(
   document: PreviewDocument,
   projectRoot?: string,
 ): Promise<MockDiagnostic[]> {

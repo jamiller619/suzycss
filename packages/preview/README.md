@@ -55,9 +55,8 @@ atomic save. A mismatch is a conflict and must abort/reload, never last-write-wi
 Unknown future schema versions fail validation and are never rewritten. Other
 unknown fields are rejected so misspellings are visible.
 
-Current scope is the configuration/discovery/document foundation. It does not
-yet bundle modules, resolve descriptors, or render; those stages can consume an
-existing validated document without running discovery.
+The server and explorer consume an existing validated document without running
+discovery. Analysis remains a separate source-change workflow.
 
 ## Static discovery scope
 
@@ -215,3 +214,31 @@ route writes the configured document through `DocumentStore`; it requires the
 same HTTP origin, a random session token, JSON content type, revision, and etag.
 There is no arbitrary filesystem-write endpoint. Closing the server stops Vite,
 the fallback watchers, timers, iframe mounts, and event listeners.
+
+## Explorer interface
+
+The shell provides keyboard-operable component navigation, automatic and named
+state selection, an isolated live preview, prop controls, whole-document JSON
+editing, validation feedback, selective regeneration, explicit Save, and a
+bounded callback/event log. Controls are selected from resolved metadata:
+checkboxes for booleans, selects for literals and union discriminators, native
+text/number inputs, and JSON editors for nested objects, complete array dataset
+replacement, descriptors, module references, validators, and unsupported
+advanced metadata. Descriptor objects remain visibly structured data; they are
+never presented as executable strings.
+
+Each value source is explicit: generated/default, saved override, omission,
+null, or a concrete override. Changes validate through the same contract used by
+generation. A valid draft updates the iframe immediately; invalid field or JSON
+text stays in its editor while the last valid preview remains mounted. Valid
+drafts are retained across Vite reloads for the current document revision.
+Regeneration skips pinned values, can target one field, and does not alter
+unrelated fields. Reset removes the selected override and returns precedence to
+generated/default data.
+
+Save sends the revision and byte etag originally read. Direct disk changes
+refresh a clean explorer; when a draft is dirty, the shell retains it and shows
+explicit **Merge external changes** and **Reload from disk** choices. Merge uses
+the persistence three-way reconciliation and keeps conflicts in the document
+for review. Save remains disabled for invalid drafts or unresolved external
+changes, so a stale browser cannot silently overwrite an editor write.
