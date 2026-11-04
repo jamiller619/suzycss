@@ -11,6 +11,7 @@
       "!!**/dist",
       "!!**/test-results",
       "!!suzy.schema.json",
+      "!!src/preview/page.html",
       "!!src/styles/theme.css"
     ]
   },

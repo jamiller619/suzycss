@@ -46,29 +46,31 @@ export interface ConfigInput {
   $schema?: string
   version?: 1
   name?: string
+  prefix?: string
   colors?: Partial<
     Record<'accent' | 'warning' | 'danger' | 'success' | 'info', Palette>
   > & { gray?: (typeof neutrals)[number] }
   font?: { family?: { body?: string; mono?: string } }
   radius?: 'none' | 'subtle' | 'rounded' | 'pill'
+  squircle?: boolean
   density?: 'compact' | 'comfortable' | 'spacious'
-  appearance?: Mode | 'both'
   output?: string
   overrides?: Partial<Record<'shared' | Mode, Tokens>>
 }
 export interface Config {
   version: 1
   name: string
+  prefix: string
   colors: Required<NonNullable<ConfigInput['colors']>>
   font: { family: { body?: string; mono?: string } }
   radius: NonNullable<ConfigInput['radius']>
+  squircle: boolean
   density: NonNullable<ConfigInput['density']>
-  appearance: NonNullable<ConfigInput['appearance']>
   output: string
   overrides: Record<'shared' | Mode, Tokens>
 }
 interface Schema {
-  type?: 'object' | 'string' | 'integer'
+  type?: 'object' | 'string' | 'integer' | 'boolean'
   properties?: Record<string, Schema>
   additionalProperties?: boolean | Schema
   propertyNames?: { pattern: string }
@@ -97,7 +99,7 @@ const choice = (values: readonly string[]): Schema => ({
 })
 const overrides: Schema = {
   type: 'object',
-  propertyNames: { pattern: '^--suzy-[a-z][a-z0-9-]*$' },
+  propertyNames: { pattern: '^--[a-z][a-z0-9-]*$' },
   additionalProperties: cssValue,
 }
 export const configSchema = {
@@ -107,6 +109,7 @@ export const configSchema = {
     $schema: string,
     version: { type: 'integer', enum: [1] },
     name: string,
+    prefix: { type: 'string', pattern: '^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$' },
     colors: object(
       Object.fromEntries(
         ['accent', 'gray', 'warning', 'danger', 'success', 'info'].map(
@@ -116,8 +119,8 @@ export const configSchema = {
     ),
     font: object({ family: object({ body: cssValue, mono: cssValue }) }),
     radius: choice(['none', 'subtle', 'rounded', 'pill']),
+    squircle: { type: 'boolean' },
     density: choice(['compact', 'comfortable', 'spacious']),
-    appearance: choice(['light', 'dark', 'both']),
     output: string,
     overrides: object({ shared: overrides, light: overrides, dark: overrides }),
   }),
@@ -135,7 +138,7 @@ function validate(value: unknown, schema: Schema, path: string): void {
         schema.propertyNames &&
         !new RegExp(schema.propertyNames.pattern).test(key)
       ) {
-        fail(`invalid token name "${key}"; use --suzy-name`)
+        fail(`invalid token name "${key}"; use --prefix-name`)
       }
       const property = Object.hasOwn(schema.properties ?? {}, key)
         ? schema.properties?.[key]
@@ -158,6 +161,8 @@ function validate(value: unknown, schema: Schema, path: string): void {
         'expected a single safe CSS value; delimiters, comments, escapes and URLs are not supported',
       )
     }
+  } else if (schema.type === 'boolean' && typeof value !== 'boolean') {
+    fail('expected a boolean')
   } else if (schema.type === 'integer' && !Number.isInteger(value)) {
     fail('expected an integer')
   }
@@ -170,9 +175,20 @@ function validate(value: unknown, schema: Schema, path: string): void {
 export function resolveConfig(input: unknown = {}): Config {
   validate(input, configSchema, 'config')
   const c = input as ConfigInput
+  const prefix = c.prefix ?? 'suzy'
+  for (const [mode, tokens] of Object.entries(c.overrides ?? {})) {
+    for (const name of Object.keys(tokens)) {
+      if (!new RegExp(`^--${prefix}-[a-z][a-z0-9-]*$`).test(name)) {
+        throw new Error(
+          `config.overrides.${mode}: invalid token name "${name}"; use --${prefix}-name`,
+        )
+      }
+    }
+  }
   return {
     version: 1,
     name: c.name ?? 'suzy',
+    prefix,
     colors: {
       accent: 'violet',
       gray: 'slate',
@@ -188,8 +204,8 @@ export function resolveConfig(input: unknown = {}): Config {
       },
     },
     radius: c.radius ?? 'rounded',
+    squircle: c.squircle ?? false,
     density: c.density ?? 'comfortable',
-    appearance: c.appearance ?? 'both',
     output: c.output ?? './src/styles/theme.css',
     overrides: {
       shared: { ...c.overrides?.shared },

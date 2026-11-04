@@ -95,7 +95,10 @@ export function validateTheme(theme: Theme): Diagnostic[] {
       visit(name, [])
     }
     for (const [fg, bg] of contrastPairs) {
-      const pair = [`--suzy-${fg}`, `--suzy-${bg}`] as const
+      const pair = [
+        `--${theme.config.prefix}-${fg}`,
+        `--${theme.config.prefix}-${bg}`,
+      ] as const
       const foreground = parseColor(resolveToken(tokens, pair[0]) ?? '')
       const background = parseColor(resolveToken(tokens, pair[1]) ?? '')
       if (!foreground || !background) {

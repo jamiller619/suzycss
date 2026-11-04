@@ -1,4 +1,7 @@
 {
+  "files.associations": {
+    "**/src/preview/page.html": "handlebars"
+  },
   "[javascript][javascriptreact][typescript][typescriptreact][json][jsonc][css]": {
     "editor.defaultFormatter": "biomejs.biome",
     "editor.formatOnSave": true,

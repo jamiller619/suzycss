@@ -1,7 +1,14 @@
 import assert from 'node:assert/strict'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  symlink,
+  writeFile,
+} from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import test from 'node:test'
 import { chromium } from 'playwright'
 import {
@@ -15,7 +22,101 @@ import { startPreview } from '../dist/preview/server.js'
 const rgb = (hex) =>
   `rgb(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(', ')})`
 
-test('computed CSS: OS, explicit root, alternating nested scopes, local aliases, reduced motion, single modes', async (t) => {
+test('surfaces follow nesting, theme scopes, moves, and detached roots', async (t) => {
+  const browser = await chromium.launch({
+    headless: true,
+    executablePath: process.env.SUZY_CHROMIUM_EXECUTABLE,
+  })
+  t.after(() => browser.close())
+  const page = await browser.newPage()
+  const theme = createTheme(resolveConfig({ prefix: 'app' }))
+  await page.route('http://suzy.test/**', async (route) => {
+    const name = new URL(route.request().url()).pathname.slice(1)
+    await route.fulfill({
+      contentType: 'text/javascript',
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: await readFile(
+        new URL(`../packages/components/dist/${name}`, import.meta.url),
+        'utf8',
+      ),
+    })
+  })
+  await page.setContent(`<style>${renderCss(theme)}</style>
+    <style>suzy-surface { padding: 16px; }</style>
+    <suzy-surface id="outer">Base
+      <div id="wrapper"><suzy-surface id="inner">Nested
+        <suzy-surface id="third">Third
+          <suzy-surface id="fourth">Fourth
+            <suzy-surface id="fifth">Capped</suzy-surface>
+          </suzy-surface>
+        </suzy-surface>
+      </suzy-surface></div>
+      <suzy-surface id="sibling">Sibling</suzy-surface>
+      <div data-suzy-theme="dark"><suzy-surface id="dark">Dark nested theme</suzy-surface></div>
+    </suzy-surface>
+    <suzy-surface id="detached">Detached</suzy-surface>`)
+  await page.addScriptTag({ type: 'module', url: 'http://suzy.test/index.js' })
+  const assertSurface = async (id, level, mode) => {
+    assert.equal(
+      await page
+        .locator(`#${id}`)
+        .evaluate((el) => getComputedStyle(el).backgroundColor),
+      rgb(resolveToken(theme.modes[mode], `--app-surface-${level}`)),
+      `${id}: surface ${level}, ${mode}`,
+    )
+  }
+  for (const mode of ['light', 'dark']) {
+    await page.evaluate((mode) => {
+      document.documentElement.dataset.suzyTheme = mode
+    }, mode)
+    for (const [id, level] of [
+      ['outer', 1],
+      ['inner', 2],
+      ['third', 3],
+      ['fourth', 4],
+      ['fifth', 4],
+      ['sibling', 2],
+      ['detached', 1],
+    ]) {
+      await assertSurface(id, level, mode)
+    }
+    await assertSurface('dark', 2, 'dark')
+    await mkdir('test-results', { recursive: true })
+    await page.screenshot({ path: `test-results/surfaces-${mode}.png` })
+  }
+  await page.evaluate(() =>
+    document.body.append(document.querySelector('#wrapper')),
+  )
+  await assertSurface('inner', 1, 'dark')
+  await assertSurface('third', 2, 'dark')
+  await page.evaluate(() =>
+    document
+      .querySelector('#detached')
+      .append(document.querySelector('#wrapper')),
+  )
+  await assertSurface('inner', 2, 'dark')
+  await assertSurface('third', 3, 'dark')
+  await page.evaluate(() => {
+    const host = document.createElement('div')
+    document.querySelector('#outer').append(host)
+    host.attachShadow({ mode: 'open' }).innerHTML =
+      '<suzy-surface id="shadow">Shadow child</suzy-surface>'
+  })
+  await assertSurface('shadow', 2, 'dark')
+  await page.locator('#outer').evaluate((el) => {
+    el.hidden = true
+  })
+  assert.equal(await page.locator('#outer').isVisible(), false)
+  await page.addStyleTag({ content: '#detached { background: rgb(1, 2, 3); }' })
+  assert.equal(
+    await page
+      .locator('#detached')
+      .evaluate((el) => getComputedStyle(el).backgroundColor),
+    'rgb(1, 2, 3)',
+  )
+})
+
+test('computed CSS: OS, explicit root, alternating nested scopes, local aliases, reduced motion', async (t) => {
   const browser = await chromium.launch({
     headless: true,
     executablePath: process.env.SUZY_CHROMIUM_EXECUTABLE,
@@ -24,11 +125,17 @@ test('computed CSS: OS, explicit root, alternating nested scopes, local aliases,
   const page = await browser.newPage()
   const theme = createTheme(
     resolveConfig({
-      overrides: { shared: { '--suzy-local': 'var(--suzy-accent-9)' } },
+      overrides: {
+        shared: {
+          '--suzy-local': 'var(--suzy-accent-9)',
+          '--suzy-spacing': 'var(--suzy-control-padding-x)',
+        },
+        dark: { '--suzy-space-3': '2rem', '--suzy-dark-only': '3px' },
+      },
     }),
   )
   const html = (css) =>
-    `<style>${css}</style><style>.sample { background:var(--suzy-bg); color:var(--suzy-text); border:1px solid var(--suzy-local); transition-property:opacity; transition-duration:var(--suzy-duration-normal); }</style><div id="root" class="sample">root</div><div id="dark" class="sample" data-suzy-theme="dark"><div id="light-in-dark" class="sample" data-suzy-theme="light"><div id="dark-in-light" class="sample" data-suzy-theme="dark">nested</div></div></div><div id="light" class="sample" data-suzy-theme="light"><div id="dark-in-light-2" class="sample" data-suzy-theme="dark"><div id="light-in-dark-2" class="sample" data-suzy-theme="light">nested</div></div></div>`
+    `<style>${css}</style><style>.sample { background:var(--suzy-bg); color:var(--suzy-text); border:1px solid var(--suzy-local); padding-left:var(--suzy-spacing); margin-left:var(--suzy-dark-only, 0px); transition-property:opacity; transition-duration:var(--suzy-duration-normal); }</style><div id="root" class="sample">root</div><div id="dark" class="sample" data-suzy-theme="dark"><div id="light-in-dark" class="sample" data-suzy-theme="light"><div id="dark-in-light" class="sample" data-suzy-theme="dark">nested</div></div></div><div id="light" class="sample" data-suzy-theme="light"><div id="dark-in-light-2" class="sample" data-suzy-theme="dark"><div id="light-in-dark-2" class="sample" data-suzy-theme="light">nested</div></div></div>`
   const computed = (id) =>
     page.locator(`#${id}`).evaluate((el) => {
       const s = getComputedStyle(el)
@@ -38,6 +145,8 @@ test('computed CSS: OS, explicit root, alternating nested scopes, local aliases,
         border: s.borderTopColor,
         scheme: s.colorScheme,
         duration: s.transitionDuration,
+        padding: s.paddingLeft,
+        margin: s.marginLeft,
       }
     })
   const assertMode = async (id, mode) => {
@@ -51,6 +160,8 @@ test('computed CSS: OS, explicit root, alternating nested scopes, local aliases,
       `${id} local alias`,
     )
     assert.equal(s.scheme, mode)
+    assert.equal(s.padding, mode === 'dark' ? '32px' : '12px')
+    assert.equal(s.margin, mode === 'dark' ? '3px' : '0px')
   }
   await page.setContent(html(renderCss(theme)))
   for (const os of ['light', 'dark']) {
@@ -73,31 +184,13 @@ test('computed CSS: OS, explicit root, alternating nested scopes, local aliases,
   await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' })
   for (const id of ['root', 'dark', 'light', 'dark-in-light', 'light-in-dark'])
     assert.equal((await computed(id)).duration, '0s')
-  for (const mode of ['light', 'dark']) {
-    const single = createTheme(resolveConfig({ appearance: mode }))
-    await page.setContent(html(renderCss(single)))
-    await page.emulateMedia({
-      colorScheme: mode === 'light' ? 'dark' : 'light',
-    })
-    for (const id of [
-      'root',
-      'dark',
-      'light',
-      'dark-in-light',
-      'light-in-dark',
-    ])
-      assert.equal(
-        (await computed(id)).bg,
-        rgb(resolveToken(single.modes[mode], '--suzy-bg')),
-      )
-  }
 })
 
 test('preview browser: switching, dialogs, live reload/error recovery, responsive layout, no remote assets', async (t) => {
   const dir = await mkdtemp(join(tmpdir(), 'suzy-browser-'))
   t.after(() => rm(dir, { recursive: true, force: true }))
   const config = join(dir, 'suzy.config.json')
-  await writeFile(config, '{}')
+  await writeFile(config, JSON.stringify({ prefix: 'app' }))
   const server = await startPreview(config, 0)
   t.after(server.close)
   const browser = await chromium.launch({
@@ -314,6 +407,137 @@ test('default and primary buttons retain their colors through interaction in bot
         })
         await assertColor(primary ? '--suzy-action' : '--suzy-gray-3')
       }
+    }
+  }
+})
+
+test('preview shows components only when installed in the consumer project', async (t) => {
+  const browser = await chromium.launch({
+    headless: true,
+    executablePath: process.env.SUZY_CHROMIUM_EXECUTABLE,
+  })
+  t.after(() => browser.close())
+  for (const installed of [false, true]) {
+    const dir = await mkdtemp(join(tmpdir(), 'suzy-optional-'))
+    t.after(() => rm(dir, { recursive: true, force: true }))
+    await writeFile(
+      join(dir, 'suzy.config.json'),
+      JSON.stringify({ prefix: 'app' }),
+    )
+    if (installed) {
+      await mkdir(join(dir, 'node_modules/@suzy'), { recursive: true })
+      await symlink(
+        resolve('packages/components'),
+        join(dir, 'node_modules/@suzy/components'),
+        'dir',
+      )
+    }
+    const server = await startPreview(join(dir, 'suzy.config.json'), 0)
+    t.after(server.close)
+    const page = await browser.newPage({
+      viewport: { width: 1200, height: 900 },
+    })
+    const errors = []
+    page.on('pageerror', (error) => errors.push(error.message))
+    await page.goto(server.url)
+    assert.equal(await page.locator('#components').count(), installed ? 1 : 0)
+    assert.equal(
+      (await page.request.get(`${server.url}/components/index.js`)).status(),
+      installed ? 200 : 404,
+    )
+    assert.equal(
+      await page.locator('.dual').first().locator('suzy-surface').count(),
+      0,
+    )
+    if (installed) {
+      await page.waitForFunction(() => customElements.get('suzy-surface'))
+      const theme = createTheme(resolveConfig({ prefix: 'app' }))
+      for (const mode of ['light', 'dark']) {
+        const surface = page.locator(
+          `#components [data-suzy-theme="${mode}"] > suzy-surface`,
+        )
+        assert.equal(
+          await surface.evaluate((el) => getComputedStyle(el).backgroundColor),
+          rgb(resolveToken(theme.modes[mode], '--app-surface-1')),
+        )
+      }
+      await mkdir('test-results', { recursive: true })
+      await page
+        .locator('#components')
+        .screenshot({ path: 'test-results/components-section.png' })
+      await page.setViewportSize({ width: 375, height: 900 })
+      assert.ok(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      )
+    }
+    assert.deepEqual(errors, [])
+    await page.close()
+  }
+})
+
+test('squircle corners render on controls and containers while radios stay round', async (t) => {
+  const browser = await chromium.launch({
+    headless: true,
+    executablePath: process.env.SUZY_CHROMIUM_EXECUTABLE,
+  })
+  t.after(() => browser.close())
+  const page = await browser.newPage()
+  for (const squircle of [true, false]) {
+    const theme = createTheme(
+      resolveConfig({ radius: 'subtle', squircle, prefix: 'app' }),
+    )
+    await page.setContent(`<style>${renderCss(theme)}</style>
+      <button>Continue</button><input type="text"><textarea>Notes</textarea>
+      <select><option>One</option></select><input type="checkbox" checked>
+      <input type="radio" checked><input type="file">
+      <fieldset><legend>Options</legend>Fieldset</fieldset><dialog open>Details</dialog>`)
+    assert.equal(
+      await page.evaluate(() => CSS.supports('corner-shape', 'squircle')),
+      true,
+    )
+    const shape = squircle ? 'superellipse(2)' : 'superellipse(1)'
+    for (const selector of [
+      'button',
+      'input[type="text"]',
+      'textarea',
+      'select',
+      'input[type="checkbox"]',
+      'fieldset',
+      'dialog',
+    ]) {
+      assert.equal(
+        await page
+          .locator(selector)
+          .evaluate((el) => getComputedStyle(el).cornerShape),
+        shape,
+        `${squircle} ${selector}`,
+      )
+    }
+    assert.equal(
+      await page
+        .locator('input[type="file"]')
+        .evaluate(
+          (el) => getComputedStyle(el, '::file-selector-button').cornerShape,
+        ),
+      shape,
+    )
+    assert.equal(
+      await page
+        .locator('input[type="radio"]')
+        .evaluate((el) => getComputedStyle(el).cornerShape),
+      'superellipse(1)',
+    )
+    assert.equal(
+      await page
+        .locator('button')
+        .evaluate((el) => getComputedStyle(el).borderTopLeftRadius),
+      '4px',
+    )
+    if (squircle) {
+      await mkdir('test-results', { recursive: true })
+      await page.screenshot({ path: 'test-results/squircle.png' })
     }
   }
 })

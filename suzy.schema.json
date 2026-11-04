@@ -20,6 +20,10 @@
       "minLength": 1,
       "pattern": "\\S"
     },
+    "prefix": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+    },
     "colors": {
       "type": "object",
       "additionalProperties": false,
@@ -250,20 +254,15 @@
         "pill"
       ]
     },
+    "squircle": {
+      "type": "boolean"
+    },
     "density": {
       "type": "string",
       "enum": [
         "compact",
         "comfortable",
         "spacious"
-      ]
-    },
-    "appearance": {
-      "type": "string",
-      "enum": [
-        "light",
-        "dark",
-        "both"
       ]
     },
     "output": {
@@ -278,7 +277,7 @@
         "shared": {
           "type": "object",
           "propertyNames": {
-            "pattern": "^--suzy-[a-z][a-z0-9-]*$"
+            "pattern": "^--[a-z][a-z0-9-]*$"
           },
           "additionalProperties": {
             "type": "string",
@@ -290,7 +289,7 @@
         "light": {
           "type": "object",
           "propertyNames": {
-            "pattern": "^--suzy-[a-z][a-z0-9-]*$"
+            "pattern": "^--[a-z][a-z0-9-]*$"
           },
           "additionalProperties": {
             "type": "string",
@@ -302,7 +301,7 @@
         "dark": {
           "type": "object",
           "propertyNames": {
-            "pattern": "^--suzy-[a-z][a-z0-9-]*$"
+            "pattern": "^--[a-z][a-z0-9-]*$"
           },
           "additionalProperties": {
             "type": "string",

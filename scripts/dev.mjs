@@ -28,6 +28,13 @@ process.once('SIGTERM', () => stop())
 
 start(['node_modules/typescript/bin/tsc', '--watch', '--preserveWatchOutput'])
 start([
+  'node_modules/typescript/bin/tsc',
+  '-p',
+  'packages/components/tsconfig.json',
+  '--watch',
+  '--preserveWatchOutput',
+])
+start([
   '--watch',
   '--watch-preserve-output',
   'dist/cli/main.js',

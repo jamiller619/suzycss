@@ -3,29 +3,29 @@
     <h2>A little order.<br>A lot of possibility.</h2>
     <p class="muted">A complete visual language, built from a few choices.</p>
     <div class="card"><h3>Your next idea</h3><p>Make space for something worth making.</p>
-      <label>Project name<input placeholder="A fresh start" aria-label="{{mode}} project name"></label>
+      <label>Text input<input placeholder="A fresh start" aria-label="{{mode}} text input"></label>
       <div class="actions"><button class="primary">Create project</button><button>Save draft</button></div>
       <a href="#tokens">Explore the tokens →</a>
     </div>
     <div class="actions"><details><summary>Project menu</summary><nav aria-label="{{mode}} project"><a href="#palettes">Palette library</a><a href="#type">Typography</a><a href="#tokens">All tokens</a></nav></details><button data-dialog="{{mode}}">Open dialog</button></div>
     <fieldset class="native-controls"><legend>Native HTML controls</legend>
       <p class="muted">Styled by the generated CSS. No control classes needed.</p>
-      <label>Email<input type="email" placeholder="you@example.com"></label>
-      <label>Project type<select><option>Personal</option><option>Team</option></select></label>
-      <label>Notes<textarea rows="3" placeholder="What are you making?"></textarea></label>
-      <div class="choices"><label><input type="checkbox" checked> Email updates</label><label><input type="radio" name="plan-{{mode}}" checked> Free</label><label><input type="radio" name="plan-{{mode}}"> Pro</label></div>
-      <label>Volume<input type="range" aria-label="{{mode}} volume" value="60"></label>
-      <label>Accent<input type="color" value="#6e56cf"></label>
-      <label>Attachment<input type="file"></label>
-      <label>Start date<input type="date" value="2026-10-10"></label>
-      <label>Quantity<input type="number" value="1" min="1"></label>
-      <label>Read only<input readonly value="Managed by your team"></label>
-      <label>Disabled<input disabled value="Unavailable"></label>
-      <label>Invalid email<input type="email" aria-invalid="true" aria-describedby="error-{{mode}}" value="needs-an-address"></label>
+      <label>Email input<input type="email" placeholder="you@example.com"></label>
+      <label>Select<select><option>Personal</option><option>Team</option></select></label>
+      <label>Textarea<textarea rows="3" placeholder="What are you making?"></textarea></label>
+      <div class="choices"><label><input type="checkbox" checked> Checkbox</label><label><input type="radio" name="plan-{{mode}}" checked> Radio button 1</label><label><input type="radio" name="plan-{{mode}}"> Radio button 2</label></div>
+      <label>Range input<input type="range" aria-label="{{mode}} range input" value="60"></label>
+      <label>Color input<input type="color" value="#6e56cf"></label>
+      <label>File input<input type="file"></label>
+      <label>Date input<input type="date" value="2026-10-10"></label>
+      <label>Number input<input type="number" value="1" min="1"></label>
+      <label>Read-only text input<input readonly value="Managed by your team"></label>
+      <label>Disabled text input<input disabled value="Unavailable"></label>
+      <label>Invalid email input<input type="email" aria-invalid="true" aria-describedby="error-{{mode}}" value="needs-an-address"></label>
       <small id="error-{{mode}}">Enter a complete email address.</small>
       <label>Progress<progress value="65" max="100">65%</progress></label>
-      <label>Storage<meter value=".4">40%</meter></label>
-      <div class="actions"><button type="button">Native button</button><input class="primary" type="submit" value="Submit"><button disabled>Disabled</button></div>
+      <label>Meter<meter value=".4">40%</meter></label>
+      <div class="actions"><button type="button">Button</button><input class="primary" type="submit" value="Submit input"><button disabled>Disabled button</button></div>
     </fieldset>
     <div class="statuses">{{statuses}}</div>
     <dialog id="dialog-{{mode}}" data-suzy-theme="{{mode}}"><h3>Room for the details</h3><p>Dialogs use their own radius, surface, and overlay tokens.</p><form method="dialog"><button >Done</button></form></dialog>

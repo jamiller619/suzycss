@@ -2,59 +2,129 @@ import { baseCss } from './base-css.js'
 import type { Tokens } from './config.js'
 import type { Theme } from './theme.js'
 
+const isPaletteToken = (name: string) =>
+  /-(?:accent|gray|warning|danger|success|info)-(?:a)?\d+$/.test(name)
+
+const contexts = [
+  ['Component aliases', (name: string) => name.startsWith('--_')],
+  ['Color palettes', isPaletteToken],
+  ['Typography', (name: string) => /-(?:font|line-height)-/.test(name)],
+  ['Spacing', (name: string) => /-space-\d+$/.test(name)],
+  ['Shape', (name: string) => /-(?:radius-|corner-shape$)/.test(name)],
+  ['Shadows', (name: string) => /-shadow-/.test(name)],
+  ['Motion', (name: string) => /-(?:duration|ease)-/.test(name)],
+  ['Stacking', (name: string) => /-z-/.test(name)],
+  [
+    'Layout',
+    (name: string) =>
+      /-(?:control-height|control-padding-x|control-gap|panel-padding|section-gap)$/.test(
+        name,
+      ),
+  ],
+  ['Semantic and custom', () => true],
+] as const
+
+function properties(tokens: Tokens, indent: string): string {
+  const groups = new Map<string, string[]>(
+    contexts.map(([context]) => [context, []]),
+  )
+  for (const name of Object.keys(tokens).sort((a, b) =>
+    a.localeCompare(b, 'en', { numeric: true }),
+  )) {
+    const context = contexts.find(([, matches]) => matches(name))?.[0]
+    if (!context) continue
+    const names = groups.get(context) ?? []
+    names.push(name)
+    groups.set(context, names)
+  }
+  return [...groups]
+    .filter(([, names]) => names.length > 0)
+    .map(
+      ([context, names]) =>
+        `${indent}  /* ${context} */\n${names
+          .map((name) => `${indent}  ${name}: ${tokens[name]};`)
+          .join('\n')}`,
+    )
+    .join('\n\n')
+}
+
 function block(
   selector: string,
-  mode: string,
+  mode: string | undefined,
   tokens: Tokens,
   indent = '  ',
 ): string {
-  const properties = Object.keys(tokens)
-    .sort()
-    .map((name) => `${indent}  ${name}: ${tokens[name]};`)
-    .join('\n')
-  return `${indent}${selector} {\n${indent}  color-scheme: ${mode};\n${properties}\n${indent}}`
+  const declarations = properties(tokens, indent)
+  return `${indent}${selector} {\n${mode ? `${indent}  color-scheme: ${mode};\n` : ''}${declarations}\n${indent}}`
 }
 export function renderCss(theme: Theme): string {
-  const light = theme.modes.light,
-    dark = theme.modes.dark
-  const blocks: string[] = []
-  if (light && dark) {
-    blocks.push(block(':root, [data-suzy-theme="light"]', 'light', light))
-    blocks.push(
-      `  @media (prefers-color-scheme: dark) {\n${block(':root:not([data-suzy-theme="light"]):not([data-suzy-theme="dark"])', 'dark', dark, '    ')}\n  }`,
-    )
-    blocks.push(block('[data-suzy-theme="dark"]', 'dark', dark))
-  } else {
-    const mode = light ? 'light' : 'dark'
-    const tokens = light ?? dark
-    if (!tokens) {
-      throw new Error('Cannot render a theme without a light or dark mode.')
+  const { prefix } = theme.config
+  // Private component aliases must resolve at each theme boundary too.
+  const componentTokens = Object.fromEntries(
+    ['text', 'surface-1', 'surface-2', 'surface-3', 'surface-4'].map((name) => [
+      `--_suzy-${name}`,
+      `var(--${prefix}-${name})`,
+    ]),
+  )
+  const light = { ...theme.modes.light, ...componentTokens }
+  const dark = { ...theme.modes.dark, ...componentTokens }
+  const names = new Set([...Object.keys(light), ...Object.keys(dark)])
+  const themed = new Set(
+    [...names].filter(
+      (name) => isPaletteToken(name) || light[name] !== dark[name],
+    ),
+  )
+  // Identical aliases still need rebinding when a dependency changes by mode.
+  let changed = true
+  while (changed) {
+    changed = false
+    for (const name of names) {
+      if (themed.has(name)) continue
+      const references = `${light[name] ?? ''} ${dark[name] ?? ''}`.matchAll(
+        /\bvar\(\s*(--[\w-]+)/g,
+      )
+      if ([...references].some((match) => themed.has(match[1] ?? ''))) {
+        themed.add(name)
+        changed = true
+      }
     }
-    blocks.push(
-      block(
-        ':root, [data-suzy-theme="light"], [data-suzy-theme="dark"]',
-        mode,
-        tokens,
-      ),
-    )
   }
+  const shared = Object.fromEntries(
+    Object.entries(light).filter(([name]) => !themed.has(name)),
+  )
+  const modeTokens = (tokens: Tokens): Tokens =>
+    Object.fromEntries(
+      [...themed].map((name) => [name, tokens[name] ?? 'initial']),
+    )
+  const blocks = [
+    block(
+      ':root, [data-suzy-theme="light"], [data-suzy-theme="dark"]',
+      undefined,
+      shared,
+    ),
+    block(':root, [data-suzy-theme="light"]', 'light', modeTokens(light)),
+    `  @media (prefers-color-scheme: dark) {\n${block(':root:not([data-suzy-theme="light"]):not([data-suzy-theme="dark"])', 'dark', modeTokens(dark), '    ')}\n  }`,
+    block('[data-suzy-theme="dark"]', 'dark', modeTokens(dark)),
+  ]
   for (const [role, selector] of [
     ['body', 'body'],
     ['mono', 'code, kbd, samp, pre'],
   ]) {
-    const token = `--suzy-font-${role}`
+    const token = `--${prefix}-font-${role}`
     if (Object.values(theme.modes).some((tokens) => token in tokens)) {
       blocks.push(
         `  :where(${selector}) {\n    font-family: var(${token}, revert-layer);\n  }`,
       )
     }
   }
-  const names = new Set(
+  const durationNames = new Set(
     Object.values(theme.modes).flatMap((t) =>
-      Object.keys(t).filter((n) => n.startsWith('--suzy-duration-')),
+      Object.keys(t).filter((n) => n.startsWith(`--${prefix}-duration-`)),
     ),
   )
-  const reduced = Object.fromEntries([...names].sort().map((n) => [n, '0ms']))
+  const reduced = Object.fromEntries(
+    [...durationNames].sort().map((n) => [n, '0ms']),
+  )
   // Match every theme boundary so a nested declaration cannot undo reduced motion.
   blocks.push(
     `  @media (prefers-reduced-motion: reduce) {\n    :root, [data-suzy-theme="light"], [data-suzy-theme="dark"] {\n${Object.keys(
@@ -63,5 +133,5 @@ export function renderCss(theme: Theme): string {
       .map((n) => `      ${n}: 0ms !important;`)
       .join('\n')}\n    }\n  }`,
   )
-  return `/* Generated by suzy. Cascade FTW. Edit your configuration, then rebuild. */\n@layer suzy {\n${blocks.join('\n\n')}\n\n${baseCss}\n}\n`
+  return `/* Generated by suzy. Cascade FTW. Edit your configuration, then rebuild. */\n@layer suzy {\n${blocks.join('\n\n')}\n\n${baseCss.replaceAll('--suzy-', `--${prefix}-`)}\n}\n`
 }

@@ -6,7 +6,7 @@ For installation and a quick start, see the [README](../README.md#installing-and
 
 | Command | Behavior |
 | --- | --- |
-| `suzy init` | Create config, schema, and CSS; refuse an existing config |
+| `suzy init` | Create config and CSS; reference the bundled schema; refuse an existing config |
 | `suzy init --accent blue --gray slate --radius pill` | Initialize with named presets |
 | `suzy init --force` | Explicitly replace the existing config |
 | `suzy build --config ./themes/suzy.config.json` | Validate and compile; create directories; atomically replace changed CSS |
@@ -16,9 +16,13 @@ For installation and a quick start, see the [README](../README.md#installing-and
 | `suzy check --strict` | Also exit nonzero for warnings |
 | `suzy --help` / `suzy --version` | Usage and package version |
 
-All commands accept `--config`. Paths in `output` resolve **relative to the configuration file**, not the shell's working directory. Init flags also include `--name`, `--warning`, `--danger`, `--success`, `--info`, `--density`, `--appearance`, and `--output`. Flags inappropriate to a command are rejected. Commands are noninteractive.
+The generated config references the schema inside the installed Suzy package; `init` does not copy a schema into your project. The reference is relative to the config directory, including when using a nested `--config` path.
+
+All commands accept `--config`. Paths in `output` resolve **relative to the configuration file**, not the shell's working directory. `build` and `watch` accept `--output <path>` as a one-run override without changing the config. Init flags also include `--name`, `--warning`, `--danger`, `--success`, `--info`, `--density`, and `--output`. Flags inappropriate to a command are rejected. Commands are noninteractive.
 
 Failed builds preserve the previous CSS. Identical CSS is not rewritten. Watch monitors the config's parent directory so replacing the file does not lose the watcher; rebuilds are serialized. Ctrl-C and SIGTERM stop watch/preview cleanly. Preview does not write output CSS. It uses the compiler's IR, updates on valid changes, and shows an error banner while retaining the last valid theme on invalid edits. A valid config is required to start preview.
+
+Generated custom properties are arranged into stable contextual sections and sorted alphabetically within each section. The sections cover component aliases, palettes, typography, spacing, shape, shadows, motion, stacking, layout, and semantic or custom tokens.
 
 ## Configuration
 
@@ -27,14 +31,15 @@ Failed builds preserve the previous CSS. Identical CSS is not rewritten. Watch m
 | Option | Default | Choices |
 | --- | --- | --- |
 | `name` | `suzy` | Nonempty display name |
+| `prefix` | `suzy` | Lowercase letter followed by lowercase letters/digits, with optional hyphen-separated segments; also available as `suzy init --prefix app` |
 | `colors.accent` | `violet` | Named Radix palette |
 | `colors.gray` | `slate` | `gray`, `mauve`, `slate`, `sage`, `olive`, `sand` |
 | `colors.warning` / `danger` / `success` / `info` | `amber` / `red` / `green` / `blue` | Named Radix palette |
 | `font.family.body` | Browser default | CSS font-family value |
 | `font.family.mono` | Browser default | CSS font-family value |
 | `radius` | `rounded` | `none`, `subtle`, `rounded`, `pill` |
+| `squircle` | `false` | Boolean; applies squircle corners to the selected radius |
 | `density` | `comfortable` | `compact`, `comfortable`, `spacious` |
-| `appearance` | `both` | `light`, `dark`, `both` |
 | `output` | `./src/styles/theme.css` | Output path |
 | `overrides` | Empty | `shared`, `light`, `dark` token maps |
 
@@ -54,7 +59,7 @@ Density changes layout dimensions, never the typography scale. Radius presets se
 
 ### Overrides and precedence
 
-Use full custom-property names. Additional `--suzy-*` tokens are allowed. Values must be nonempty strings containing one CSS value; declaration delimiters, markup, escapes, comments, and URLs are rejected. Do not use overrides to load assets.
+Use full custom-property names with the configured prefix. Additional tokens using that prefix are allowed. For example, `"prefix": "app"` requires override keys such as `--app-bg` and references such as `var(--app-gray-1)`. The compiler validates the prefix of override keys; the editor schema validates their general custom-property syntax. Values must be nonempty strings containing one CSS value; declaration delimiters, markup, escapes, comments, and URLs are rejected. Do not use overrides to load assets.
 
 ```json
 {
@@ -70,13 +75,13 @@ Use full custom-property names. Additional `--suzy-*` tokens are allowed. Values
 }
 ```
 
-Precedence: **built-in primitives and semantics → shared overrides → current-mode overrides**. Action foreground is then chosen from black or white to maximize the lowest contrast across the resolved action default/hover/active backgrounds, unless `--suzy-action-text` was explicitly overridden. Unsupported action background expressions use black as a fallback and are reported as unevaluated by `check`; review or explicitly set the foreground. Overriding an alias replaces that alias; overriding a primitive affects aliases that still reference it. Nonemitted modes are not checked. Reduced-motion preferences force all `--suzy-duration-*` tokens to zero, even when overridden.
+Precedence: **built-in primitives and semantics → shared overrides → current-mode overrides**. Action foreground is then chosen from black or white to maximize the lowest contrast across the resolved action default/hover/active backgrounds, unless `--suzy-action-text` was explicitly overridden. Unsupported action background expressions use black as a fallback and are reported as unevaluated by `check`; review or explicitly set the foreground. Overriding an alias replaces that alias; overriding a primitive affects aliases that still reference it. Reduced-motion preferences force all `--suzy-duration-*` tokens to zero, even when overridden.
 
 Overrides are CSS values, not a full CSS type checker. The compiler verifies token dependencies; the browser determines whether a value is valid for a consuming CSS property. Missing references (including references in fallbacks and references outside Suzy) and cycles are errors. Complex expressions may be emitted but are not necessarily evaluable by contrast diagnostics.
 
 ## Theme switching
 
-With `appearance: "both"`, the default is light, following OS dark preference only when the root has no explicit light/dark theme. Set the attribute on `<html>` to override the OS:
+Suzy always generates both light and dark themes. The default is light, following OS dark preference only when the root has no explicit light/dark theme. Set the attribute on `<html>` to override the OS:
 
 ```html
 <html data-suzy-theme="light">
@@ -92,9 +97,9 @@ Remove the attribute to return to OS preference. Nested scopes can alternate arb
 </section>
 ```
 
-Every theme boundary redeclares the full token set, including semantic aliases. Aliases therefore resolve against the local palette instead of inheriting values computed on an ancestor. Shared and mode overrides also appear at each boundary. If you manually override a primitive on a different element without a theme attribute, redeclare dependent aliases there if necessary.
+Shared tokens are declared once in a rule matching every theme boundary. Theme rules and the OS dark-preference media query contain only mode-dependent tokens and aliases that depend on them, including color-based shadows and explicit mode-specific overrides. Aliases therefore resolve against the local palette instead of inheriting values computed on an ancestor. Shared and mode overrides also appear at each boundary. If you manually override a primitive on a different element without a theme attribute, redeclare dependent aliases there if necessary.
 
-Single-mode builds emit only that mode. Both recognized theme attributes act as boundaries for the selected mode; they cannot request a mode absent from the stylesheet. The CSS requires modern browsers supporting cascade layers and custom properties.
+The CSS requires modern browsers supporting cascade layers and custom properties.
 
 ## Diagnostics
 
@@ -104,3 +109,5 @@ The color evaluator supports opaque 3/6-digit hex, numeric `rgb()`, and black/wh
 
 Some default Radix combinations, including subtle text and certain action hover/status backgrounds, fall below 4.5:1. These are reported honestly; selecting a black/white action foreground cannot always satisfy every state simultaneously. Use the report to adjust tokens for your application's text size and context. Token checks **do not guarantee an application's accessibility**, and do not evaluate focus visibility, non-text contrast, layout, keyboard behavior, or arbitrary component combinations.
 
+
+Set `"squircle": true` or use `suzy init --radius rounded --squircle` to combine squircle corners with any radius preset. A `none` radius stays square. This uses `corner-shape: squircle` on controls, fieldsets, and dialogs. Browsers without `corner-shape` support keep ordinary rounded corners. Radios and range handles stay circular.

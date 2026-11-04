@@ -9,7 +9,7 @@ import {
   validateTheme,
 } from '../core/compiler.js'
 
-export async function loadTheme(configPath: string) {
+export async function loadTheme(configPath: string, output?: string) {
   let input: unknown
   try {
     input = JSON.parse(await readFile(configPath, 'utf8'))
@@ -17,7 +17,7 @@ export async function loadTheme(configPath: string) {
     throw new Error(`Cannot read ${configPath}: ${(error as Error).message}`)
   }
   const config = resolveConfig(input)
-  const outputPath = resolve(dirname(configPath), config.output)
+  const outputPath = resolve(dirname(configPath), output ?? config.output)
   if (outputPath === resolve(configPath)) {
     throw new Error('config.output must not overwrite the configuration file')
   }
@@ -52,8 +52,8 @@ export async function writeAtomic(
   }
   return true
 }
-export async function build(configPath: string) {
-  const result = await loadTheme(configPath)
+export async function build(configPath: string, output?: string) {
+  const result = await loadTheme(configPath, output)
   const changed = await writeAtomic(result.outputPath, result.css)
   return { ...result, changed }
 }

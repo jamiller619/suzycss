@@ -1,6 +1,6 @@
 # Token reference
 
-Every property begins with `--suzy-`. The following tables omit that prefix. All tokens are emitted at every theme boundary. `var(...)` aliases remain aliases in generated CSS; the preview also displays their resolved values.
+Public tokens begin with `--suzy-` by default. Set `prefix` in your configuration to change this, for example `"prefix": "app"` generates `--app-bg`. The following tables omit that prefix. All tokens are emitted at every theme boundary. `var(...)` aliases remain aliases in generated CSS; the preview also displays their resolved values. Properties beginning with `--_suzy-` are private component aliases, not public theme tokens; do not override them.
 
 ## Semantic colors
 
@@ -9,6 +9,7 @@ Every property begins with `--suzy-`. The following tables omit that prefix. All
 | `bg` | gray-1, page background |
 | `surface` | gray-2, inset/card surface |
 | `surface-raised` | gray-1, raised surface |
+| `surface-1` … `surface-4` | gray-2 … gray-5, automatic web component nesting backgrounds |
 | `surface-hover`, `surface-active` | gray-3, gray-4 |
 | `text`, `text-muted`, `text-subtle` | gray-12, gray-11, gray-10 |
 | `border`, `border-strong` | gray-6, gray-8 |
@@ -47,9 +48,10 @@ See the [preset tables](cli.md#presets) for exact dimensions. Controls retain th
 | Alpha scales | `{gray,accent,warning,danger,success,info}-a{1…12}` |
 | Spacing | `space-0…9` = 0, .25, .5, .75, 1, 1.5, 2, 3, 4, 6rem |
 | Families | `font-body`, `font-mono`; emitted only when explicitly configured or overridden |
-| Type scale | `font-size-1…8` = .75, .875, 1, 1.125, 1.25, 1.5, 2, 3rem |
+| Type scale | `font-size-1…8` = .6875, .875, 1, 1.125, 1.25, 1.5, 2, 3rem (starts at 11px with a 16px root) |
 | Weights | `font-weight-regular` 400, `medium` 500, `semibold` 600, `bold` 700 |
 | Line heights | `line-height-tight` 1.15, `normal` 1.5, `relaxed` 1.75 |
+| Corner shape | `corner-shape`: `squircle` when `squircle: true`, `round` otherwise |
 | Radii | `radius-1…4` from the preset, `radius-full` 9999px |
 | Shadows | `shadow-1` 0 1px 3px gray-a3; `shadow-2` 0 4px 16px gray-a4; `shadow-3` 0 12px 40px gray-a5 |
 | Durations | `duration-fast` 100ms, `normal` 180ms, `slow` 300ms; zero for reduced motion |
@@ -70,3 +72,5 @@ Every emitted mode checks the following at a normal-text threshold of 4.5:1:
 - Each status `*-text` against its `*-bg`.
 
 The check prints all 15 pairs per mode. FAIL is a warning; unsupported expressions are UNEVALUATED warnings, never PASS. Errors are reserved for malformed configuration and invalid token references/cycles. `--strict` fails on either errors or warnings. These checks describe specified token pairs, not all possible rendered applications.
+
+For custom rounded elements, pair your radius token with `corner-shape: var(--suzy-corner-shape)` to follow the `squircle` setting.

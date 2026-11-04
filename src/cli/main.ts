@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
-import { dirname, resolve } from 'node:path'
+import { dirname, isAbsolute, relative, resolve, sep } from 'node:path'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { parseArgs } from 'node:util'
 import {
-  configSchema,
   createTheme,
   renderCss,
   resolveConfig,
@@ -16,7 +16,7 @@ const help = `suzy — Cascade FTW.
 
 Usage: suzy <init|build|watch|preview|check> [options]
 
-  init     Create suzy.config.json, editor schema, and initial CSS
+  init     Create suzy.config.json and initial CSS
   build    Compile CSS (unchanged output is not rewritten)
   watch    Build now and rebuild on configuration changes
   preview  Serve a live local theme specimen
@@ -36,9 +36,10 @@ Init options:
   --gray <palette>      gray, mauve, slate, sage, olive, sand
   --warning <palette>  --danger <palette>  --success <palette>  --info <palette>
   --radius <preset>     none, subtle, rounded, pill
+  --squircle            Use squircle corners with the selected radius
   --density <preset>    compact, comfortable, spacious
-  --appearance <mode>   light, dark, both
-  --output <path>       CSS path, relative to the config directory
+  --prefix <name>       Token prefix (default: suzy)
+  --output <path>       CSS path for init, build, or watch; relative to config
 
 Example: suzy init --accent blue --radius pill
          suzy preview
@@ -53,10 +54,12 @@ async function main() {
       version: { type: 'boolean', short: 'v' },
       force: { type: 'boolean' },
       strict: { type: 'boolean' },
+      squircle: { type: 'boolean' },
       ...Object.fromEntries(
         [
           'config',
           'name',
+          'prefix',
           'accent',
           'gray',
           'warning',
@@ -65,7 +68,6 @@ async function main() {
           'info',
           'radius',
           'density',
-          'appearance',
           'output',
           'port',
         ].map((k) => [k, { type: 'string' as const }]),
@@ -103,6 +105,7 @@ async function main() {
   const initOptions = [
     'force',
     'name',
+    'prefix',
     'accent',
     'gray',
     'warning',
@@ -110,13 +113,13 @@ async function main() {
     'success',
     'info',
     'radius',
+    'squircle',
     'density',
-    'appearance',
-    'output',
   ]
   for (const key of Object.keys(values)) {
     if (
       (initOptions.includes(key) && command !== 'init') ||
+      (key === 'output' && !['init', 'build', 'watch'].includes(command)) ||
       (key === 'strict' && command !== 'check') ||
       (key === 'port' && command !== 'preview')
     ) {
@@ -131,13 +134,20 @@ async function main() {
         .map((k) => [k, values[k]]),
     )
     const options = Object.fromEntries(
-      ['name', 'radius', 'density', 'appearance', 'output']
+      ['name', 'prefix', 'radius', 'squircle', 'density', 'output']
         .filter((k) => values[k] !== undefined)
         .map((k) => [k, values[k]]),
     )
     const config = resolveConfig({ ...options, colors })
     const outputPath = resolve(dirname(configPath), config.output)
-    const schemaPath = resolve(dirname(configPath), 'suzy.schema.json')
+    const schemaPath = fileURLToPath(
+      new URL('../../suzy.schema.json', import.meta.url),
+    )
+    const relativeSchemaPath = relative(dirname(configPath), schemaPath)
+    // Reference the bundled schema instead of copying it into the project.
+    const schemaReference = isAbsolute(relativeSchemaPath)
+      ? pathToFileURL(schemaPath).href
+      : `./${relativeSchemaPath.split(sep).map(encodeURIComponent).join('/')}`
     if (new Set([configPath, schemaPath, outputPath]).size !== 3) {
       throw new Error(
         'Configuration, schema, and CSS output must have different paths',
@@ -150,7 +160,7 @@ async function main() {
         configPath,
         `${JSON.stringify(
           {
-            $schema: './suzy.schema.json',
+            $schema: schemaReference,
             ...options,
             colors: {
               accent: config.colors.accent,
@@ -171,15 +181,14 @@ async function main() {
       }
       throw error
     }
-    await writeAtomic(schemaPath, `${JSON.stringify(configSchema, null, 2)}\n`)
     await writeAtomic(outputPath, renderCss(theme))
     console.log(
-      `Created ${configPath}\nCreated ${schemaPath}\nCreated ${outputPath}\n\nUse: body { background: var(--suzy-bg); color: var(--suzy-text); }\nRun suzy preview to explore your theme.`,
+      `Created ${configPath}\nCreated ${outputPath}\n\nUse: body { background: var(--${config.prefix}-bg); color: var(--${config.prefix}-text); }\nRun suzy preview to explore your theme.`,
     )
     return
   }
   if (command === 'build') {
-    const result = await build(configPath)
+    const result = await build(configPath, values.output as string | undefined)
     console.log(
       `${result.changed ? 'Wrote' : 'Unchanged'} ${result.outputPath}`,
     )
@@ -216,7 +225,7 @@ async function main() {
   } else {
     const rebuild = async () => {
       try {
-        const r = await build(configPath)
+        const r = await build(configPath, values.output as string | undefined)
         console.log(`${r.changed ? 'Wrote' : 'Unchanged'} ${r.outputPath}`)
       } catch (error) {
         report(error)

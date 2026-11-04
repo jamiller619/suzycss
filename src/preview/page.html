@@ -55,22 +55,7 @@
         padding-bottom: 3rem;
       }
       h1 {
-        font-size: clamp(3rem, 8vw, 6.5rem);
-        line-height: 1;
-        letter-spacing: -0.065em;
         margin: 1rem 0;
-      }
-      h1,
-      h2,
-      h3 {
-        overflow-wrap: anywhere;
-        min-width: 0;
-        font-style: normal;
-      }
-      h2 {
-        font-size: clamp(1.8rem, 3vw, 2.75rem);
-        line-height: var(--suzy-line-height-tight);
-        letter-spacing: -0.04em;
       }
       h3 {
         margin-top: 0;
@@ -102,6 +87,7 @@
         padding: var(--suzy-panel-padding);
         border: 1px solid var(--suzy-border);
         border-radius: var(--suzy-panel-radius);
+        corner-shape: var(--suzy-corner-shape);
         margin-block: var(--suzy-section-gap);
       }
       .native-controls {
@@ -140,6 +126,7 @@
         padding: 1rem;
         border: 1px solid var(--suzy-border);
         border-radius: var(--suzy-panel-radius);
+        corner-shape: var(--suzy-corner-shape);
         box-shadow: var(--suzy-shadow-2);
       }
       nav a {
@@ -151,6 +138,7 @@
         font-size: var(--suzy-font-size-2);
         border: 1px solid;
         border-radius: var(--suzy-radius-1);
+        corner-shape: var(--suzy-corner-shape);
       }
       {{statusCss}}
       .chapter {
@@ -177,6 +165,7 @@
         height: 4rem;
         border: 1px solid var(--suzy-border);
         border-radius: var(--suzy-radius-1);
+        corner-shape: var(--suzy-corner-shape);
       }
       .swatch-label {
         text-align: center;
@@ -319,10 +308,11 @@
         </div>
         <div class="config">
           accent / {{accent}}<br>neutral / {{gray}}<br>density / {{densityName}}<br>radius
-          / {{radiusName}}<br>appearance / {{appearance}}
+          / {{radiusName}}<br>themes / light + dark
         </div>
       </section>
       <div class="dual">{{specimens}}</div>
+      {{componentsSection}}
       <section class="chapter" id="palettes">
         <div class="chapter-head">
           <h2>01 / Color, step by step</h2>
@@ -387,6 +377,9 @@
         <div class="preset-grid">{{densityPresets}}</div>
         <h2>04 / Find your shape</h2>
         <div class="preset-grid">{{radiusPresets}}</div>
+        <h3>Squircle corners</h3>
+        <p>Combine squircle with any radius preset. A zero radius stays square.</p>
+        <div class="preset-grid">{{squirclePresets}}</div>
       </section>
       <section class="chapter" id="tokens">
         <h2>05 / Under the surface</h2>
@@ -401,6 +394,7 @@
         accessibility.
       </footer>
     </main>
+    {{componentsScript}}
     <script>
       const select = document.querySelector('#appearance')
       try {

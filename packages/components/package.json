@@ -1,0 +1,22 @@
+{
+  "name": "@suzy/components",
+  "version": "0.1.0",
+  "description": "Optional Suzy web components.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./preview": "./dist/index.js",
+    "./surface.js": "./dist/surface.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "node ../../node_modules/typescript/bin/tsc -p tsconfig.json",
+    "prepack": "yarn build"
+  }
+}

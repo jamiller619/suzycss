@@ -3,17 +3,16 @@ import { chooseForeground } from './contrast.js'
 import { resolvePalette } from './palettes.js'
 export interface Theme {
   config: Config
-  modes: Partial<Record<Mode, Tokens>>
+  modes: Record<Mode, Tokens>
 }
-export const ref = (name: string): string => `var(--suzy-${name})`
 export function createTheme(config: Config): Theme {
-  const modes: Theme['modes'] = {}
-  for (const mode of (config.appearance === 'both'
-    ? ['light', 'dark']
-    : [config.appearance]) as Mode[]) {
+  const token = (name: string): string => `--${config.prefix}-${name}`
+  const ref = (name: string): string => `var(${token(name)})`
+  const modes: Theme['modes'] = { light: {}, dark: {} }
+  for (const mode of ['light', 'dark'] as const) {
     const t: Tokens = {}
     const set = (name: string, value: string) => {
-      t[`--suzy-${name}`] = value
+      t[token(name)] = value
     }
     for (const [role, palette] of Object.entries(config.colors)) {
       for (const alpha of [false, true]) {
@@ -28,7 +27,7 @@ export function createTheme(config: Config): Theme {
     for (const [role, family] of Object.entries(config.font.family)) {
       if (family) set(`font-${role}`, family)
     }
-    ;['0.75', '0.875', '1', '1.125', '1.25', '1.5', '2', '3'].forEach(
+    ;['0.6875', '0.875', '1', '1.125', '1.25', '1.5', '2', '3'].forEach(
       (value, i) => {
         set(`font-size-${i + 1}`, `${value}rem`)
       },
@@ -58,6 +57,7 @@ export function createTheme(config: Config): Theme {
       set(`radius-${i + 1}`, `${value}rem`)
     })
     set('radius-full', '9999px')
+    set('corner-shape', config.squircle ? 'squircle' : 'round')
     set('shadow-1', `0 1px 3px ${ref('gray-a3')}`)
     set('shadow-2', `0 4px 16px ${ref('gray-a4')}`)
     set('shadow-3', `0 12px 40px ${ref('gray-a5')}`)
@@ -107,6 +107,9 @@ export function createTheme(config: Config): Theme {
     for (const [name, target] of Object.entries(aliases)) {
       set(name, ref(target))
     }
+    for (let level = 1; level <= 4; level++) {
+      set(`surface-${level}`, ref(`gray-${level + 1}`))
+    }
     set('overlay', mode === 'dark' ? '#000000b3' : '#00000066')
     const density = (
       {
@@ -128,19 +131,19 @@ export function createTheme(config: Config): Theme {
       }
       visited.add(name)
       const value = t[name] ?? ''
-      const target = /^var\((--suzy-[\w-]+)\)$/.exec(value)?.[1]
+      const target = /^var\((--[\w-]+)\)$/.exec(value)?.[1]
       return target ? dereference(target, visited) : value
     }
     if (
-      !Object.hasOwn(config.overrides.shared, '--suzy-action-text') &&
-      !Object.hasOwn(config.overrides[mode], '--suzy-action-text')
+      !Object.hasOwn(config.overrides.shared, token('action-text')) &&
+      !Object.hasOwn(config.overrides[mode], token('action-text'))
     ) {
       set(
         'action-text',
         chooseForeground(
-          ['--suzy-action', '--suzy-action-hover', '--suzy-action-active'].map(
-            (n) => dereference(n),
-          ),
+          ['action', 'action-hover', 'action-active']
+            .map(token)
+            .map((n) => dereference(n)),
         ),
       )
     }
