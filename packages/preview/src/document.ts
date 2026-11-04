@@ -191,6 +191,19 @@ function mergeComponent(
     source: generated.source,
     import: generated.import,
     props,
+    states: [
+      ...current.states.filter(
+        (state) =>
+          state.generated !== true &&
+          !(
+            state.name === 'default' &&
+            !state.values &&
+            !state.wrapper &&
+            !state.description
+          ),
+      ),
+      ...generated.states.filter((state) => state.generated === true),
+    ],
     diagnostics: generated.diagnostics,
   }
 }

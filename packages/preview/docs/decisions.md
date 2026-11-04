@@ -19,6 +19,15 @@
 - Reconciliation is intentionally conservative: regenerate unedited documents,
   but refuse any document with developer-owned fields until removal handling and
   per-field ancestry are implemented.
+- Mock entropy is keyed by stable field path, never consumed from a shared stream.
+  The registry is private behind documented recipes so the data implementation
+  can change without changing the intermediate contract.
+- Representative states vary one field at a time in a fixed priority order and
+  validate the resulting complete state. Eight generated states is the default;
+  developer states are outside that destructive cap.
+- Validation covers only the resolved type subset and named rules documented in
+  the README. Custom modules receive JSON/frozen context and failures are data
+  diagnostics, not permission to silently select a different recipe.
 
 Focused verification: `yarn workspace @heysuzy/preview test` and
 `yarn workspace @heysuzy/preview check`.

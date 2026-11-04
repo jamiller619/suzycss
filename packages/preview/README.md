@@ -90,3 +90,40 @@ Running `suzy-preview` writes analysis through an atomic, revision-checked save.
 document containing developer values, non-default states, chosen generators or
 validators, wrappers, or `x-*` extensions is refused rather than destructively
 rewritten.
+
+## Deterministic mocks and validation
+
+Mock values are derived from `seed + component ID + state/field path + attempt`.
+Changing traversal order cannot change another field. Name tokenization handles
+camelCase, acronym boundaries, snake_case, and kebab-case. The built-in recipe
+registry currently recognizes text, people, money/balances, percentages and
+utilization, ISO dates, email, HTTP(S) URLs, UUIDs, and empty-state messages.
+Type literals and allowed-value rules are applied before semantic names, so a
+plausible string never violates a literal restriction. No AI or network service
+is involved. Applications may register another in-process recipe through the
+public mock API.
+
+Supported rules are `required`, `min`, `max`, `minLength`, `maxLength`,
+`pattern`, `allowed` (`options.values`), and `format` (`options.value`). Formats
+are deliberately limited to `date`, `date-time`, `email`, `url`, and `uuid`.
+Generation retries at most 20 times. Contradictions and exhausted retries become
+field-path diagnostics; they never loop or label an invalid value valid. The
+same validator functions are intended for generation and editor saves and check
+the resolved preview type model—not arbitrary TypeScript runtime behavior.
+
+`generator` descriptors select a registered recipe or a local module/export.
+Custom generators receive a frozen context with a stable numeric seed, path,
+component, prop, type, default, and JSON options. They must return JSON and are
+responsible for using the supplied seed deterministically. Referenced custom
+validators return `true`/`undefined` or an error string. Missing exports,
+exceptions, non-JSON output, and rejected values become diagnostics. Explicit
+extensions do not silently fall back to another generator.
+
+Generated states are marked with `generated: true`. The default cap is eight:
+baseline first, then one-field legal union branches, boolean poles, alternate
+literals, and optional omission in stable prop order. This avoids a Cartesian
+product. Developer states are never removed even when they exceed the generated
+cap, and every complete state is validated after normal precedence is applied.
+`value` remains pinned during full or selective regeneration. Selection uses
+stable `<component-id>.<prop>` paths. Nested literal overrides use JSON Pointer;
+objects may be patched, while datasets/arrays are replaced as a whole.

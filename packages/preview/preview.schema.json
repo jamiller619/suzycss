@@ -197,6 +197,7 @@
       "required": ["name"],
       "properties": {
         "name": { "type": "string" },
+        "generated": { "type": "boolean" },
         "description": { "type": "string" },
         "values": {
           "type": "object",

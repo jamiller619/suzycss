@@ -27,6 +27,10 @@
       "types": "./dist/write.d.ts",
       "import": "./dist/write.js"
     },
+    "./mock": {
+      "types": "./dist/mock.d.ts",
+      "import": "./dist/mock.js"
+    },
     "./schema": "./preview.schema.json"
   },
   "files": [

@@ -272,7 +272,7 @@ function reactComponent(
       export: exportName,
     },
     props,
-    states: [{ name: 'default' }],
+    states: [{ name: 'default', generated: true }],
     diagnostics: jsDoc(symbol, checker)
       ? [
           {
@@ -426,7 +426,7 @@ function webComponents(
         export: exportName,
       },
       props,
-      states: [{ name: 'default' }],
+      states: [{ name: 'default', generated: true }],
     }
   })
 }
@@ -446,6 +446,8 @@ function describeType(
     kind: kindOf(type, checker),
     source: sourceLocation(node, root),
   }
+  const literal = literalType(type)
+  if (literal !== undefined) metadata.enum = [literal]
   if (type.flags & (ts.TypeFlags.Any | ts.TypeFlags.Unknown))
     diagnostics.push({
       severity: 'warning',
@@ -800,7 +802,8 @@ function literalType(type: ts.Type): JsonPrimitive | undefined {
     return (
       (type as ts.Type & { intrinsicName?: string }).intrinsicName === 'true'
     )
-  if (type.flags & (ts.TypeFlags.Null | ts.TypeFlags.Undefined)) return null
+  if (type.flags & ts.TypeFlags.Null) return null
+  if (type.flags & ts.TypeFlags.Undefined) return
 }
 function inferDefaultName(declaration: ts.Declaration) {
   return (ts.isFunctionDeclaration(declaration) ||

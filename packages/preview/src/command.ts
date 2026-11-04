@@ -4,6 +4,7 @@ import { parseArgs } from 'node:util'
 import { analyzeProject } from './analysis.js'
 import { resolveOptions } from './config.js'
 import { assertDocument } from './document.js'
+import { generateDocumentMocks } from './mock.js'
 import { writeAnalysis } from './write.js'
 
 export const help = `suzy-preview — local component previews without story files
@@ -50,7 +51,12 @@ export async function runCommand(args: string[], cwd: string): Promise<string> {
     input: values.input,
     output: values.output,
   })
-  const generated = await analyzeProject(options)
+  const analyzed = await analyzeProject(options)
+  const { document: generated, diagnostics } = await generateDocumentMocks(
+    analyzed,
+    { projectRoot: options.projectRoot },
+  )
+  generated.diagnostics.push(...diagnostics)
   if (!values['dry-run']) await writeAnalysis(options.data, generated)
-  return `Project: ${options.projectRoot}\nInput: ${relative(options.projectRoot, options.input) || '.'}\nData: ${options.data}\nRuntime: ${options.runtime}\nComponents: ${generated.components.length}${values['dry-run'] ? ' (not written)' : ''}`
+  return `Project: ${options.projectRoot}\nInput: ${relative(options.projectRoot, options.input) || '.'}\nData: ${options.data}\nRuntime: ${options.runtime}\nComponents: ${generated.components.length}\nMock diagnostics: ${diagnostics.length}${values['dry-run'] ? ' (not written)' : ''}`
 }

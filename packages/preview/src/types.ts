@@ -65,6 +65,7 @@ export interface PropDefinition {
 }
 export interface ComponentState {
   name: string
+  generated?: boolean
   description?: string
   values?: Record<string, PreviewValue>
   wrapper?: ModuleReference
@@ -102,4 +103,16 @@ export interface PreviewDocument {
 export interface ValidationIssue {
   path: string
   message: string
+}
+
+export interface MockDiagnostic extends Diagnostic {
+  path: string
+}
+export interface MockGenerationOptions {
+  seed?: string | number
+  componentIds?: string[]
+  paths?: string[]
+  projectRoot?: string
+  stateCap?: number
+  retryCap?: number
 }

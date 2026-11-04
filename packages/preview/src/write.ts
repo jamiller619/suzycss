@@ -51,11 +51,17 @@ export function hasDeveloperEdits(document: PreviewDocument): boolean {
 
 function componentEdited(component: PreviewComponent): boolean {
   if (component.wrapper || extensionKeys(component).length) return true
-  if (component.states.length !== 1 || component.states[0]?.name !== 'default')
+  if (
+    component.states.some((state) => state.generated !== true) &&
+    (component.states.length !== 1 || component.states[0]?.name !== 'default')
+  )
     return true
   if (
     component.states.some(
-      (state) => state.values || state.wrapper || extensionKeys(state).length,
+      (state) =>
+        (state.values && state.generated !== true) ||
+        state.wrapper ||
+        extensionKeys(state).length,
     )
   )
     return true

@@ -36,6 +36,12 @@ test('mixed-framework analysis follows aliases/re-exports with stable identities
   assert.equal(card.props.onSelect.type.kind, 'function')
   assert.equal(card.props.variant.type.discriminator, 'kind')
   assert.equal(card.props.variant.type.branches.length, 2)
+  assert.deepEqual(
+    card.props.variant.type.branches.map(
+      (branch) => branch.properties.kind.enum[0],
+    ),
+    ['person', 'team'],
+  )
   assert.equal(
     card.props.variant.type.branches[0].properties.address.properties.city.kind,
     'string',
