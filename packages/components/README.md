@@ -3,7 +3,7 @@
 Optional browser components for a Suzy-generated theme. This package is installed separately from `suzy`.
 
 ```js
-import '@suzy/components'
+import '@heysuzy/components'
 ```
 
 Load your generated theme stylesheet, then use:

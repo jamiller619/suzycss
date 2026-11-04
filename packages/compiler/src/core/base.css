@@ -1,10 +1,4 @@
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
 :where(body) {
-  margin: 0;
   font-size: var(--suzy-font-size-3);
   line-height: var(--suzy-line-height-normal);
   background: var(--suzy-bg);
@@ -25,11 +19,12 @@
   letter-spacing: -0.02em;
 }
 :where(img, video) {
-  max-width: 100%;
   height: auto;
 }
+:where(video) {
+  max-width: 100%;
+}
 :where(button, input, select, textarea) {
-  font: inherit;
   letter-spacing: inherit;
 }
 :where(table) {

@@ -1,5 +1,5 @@
 {
-  "name": "@suzy/components",
+  "name": "@heysuzy/components",
   "version": "0.1.0",
   "description": "Optional Suzy web components.",
   "type": "module",
@@ -17,6 +17,7 @@
   ],
   "scripts": {
     "build": "node ../../node_modules/typescript/bin/tsc -p tsconfig.json",
+    "typecheck": "node ../../node_modules/typescript/bin/tsc -p tsconfig.json --noEmit",
     "prepack": "yarn build"
   }
 }

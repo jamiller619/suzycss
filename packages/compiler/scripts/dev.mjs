@@ -26,11 +26,8 @@ function start(args) {
 process.once('SIGINT', () => stop())
 process.once('SIGTERM', () => stop())
 
-start(['node_modules/typescript/bin/tsc', '--watch', '--preserveWatchOutput'])
 start([
-  'node_modules/typescript/bin/tsc',
-  '-p',
-  'packages/components/tsconfig.json',
+  '../../node_modules/typescript/bin/tsc',
   '--watch',
   '--preserveWatchOutput',
 ])

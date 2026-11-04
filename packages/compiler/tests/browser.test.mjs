@@ -36,7 +36,7 @@ test('surfaces follow nesting, theme scopes, moves, and detached roots', async (
       contentType: 'text/javascript',
       headers: { 'Access-Control-Allow-Origin': '*' },
       body: await readFile(
-        new URL(`../packages/components/dist/${name}`, import.meta.url),
+        new URL(`../../components/dist/${name}`, import.meta.url),
         'utf8',
       ),
     })
@@ -427,8 +427,8 @@ test('preview shows components only when installed in the consumer project', asy
     if (installed) {
       await mkdir(join(dir, 'node_modules/@suzy'), { recursive: true })
       await symlink(
-        resolve('packages/components'),
-        join(dir, 'node_modules/@suzy/components'),
+        resolve('../components'),
+        join(dir, 'node_modules/@heysuzy/components'),
         'dir',
       )
     }

@@ -1,0 +1,71 @@
+{
+  "name": "@heysuzy/inline-css-modules",
+  "version": "0.3.0",
+  "description": "Zero-runtime CSS Modules written inline in your JS/TS files via a css template literal, scoped and extracted at build time by Vite or esbuild.",
+  "main": "index.js",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./esbuild": {
+      "types": "./dist/esbuild.d.ts",
+      "default": "./dist/esbuild.js"
+    },
+    "./vite": {
+      "types": "./dist/vite.d.ts",
+      "default": "./dist/vite.js"
+    },
+    "./transform": {
+      "types": "./dist/transform.d.ts",
+      "default": "./dist/transform.js"
+    },
+    "./typescript": {
+      "types": "./dist/typescript.d.cts",
+      "default": "./dist/typescript.cjs"
+    }
+  },
+  "files": [
+    "dist/**/*"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "css-modules",
+    "inline-css",
+    "vite-plugin",
+    "esbuild-plugin"
+  ],
+  "scripts": {
+    "clean": "yarn rimraf dist",
+    "clean:force": "yarn rimraf *.tsbuildinfo && yarn clean",
+    "build": "yarn clean && tsc -p tsconfig.json && node scripts/build-typescript.mjs",
+    "build:force": "yarn clean:force && yarn build",
+    "prepublishOnly": "yarn build",
+    "test": "yarn build && node --test test/*.test.cjs"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.16",
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.25.0",
+    "rimraf": "^6.1.3",
+    "typescript": "^6.0.3",
+    "vite": "^7.0.0"
+  },
+  "peerDependencies": {
+    "esbuild": "^0.28.0",
+    "vite": "^7.0.0 || ^8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "esbuild": {
+      "optional": true
+    },
+    "vite": {
+      "optional": true
+    }
+  }
+}

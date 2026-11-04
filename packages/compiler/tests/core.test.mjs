@@ -119,6 +119,12 @@ test('CSS is stable across calls and override insertion order', () => {
   )
   const css = renderCss(compile())
   assert.match(css, /@layer suzy/)
+  assert.match(css, /\/\* Reset: modern-css-reset \*\//)
+  assert.match(css, /\/\* Suzy base styles \*\//)
+  assert.ok(
+    css.indexOf('/* Reset: modern-css-reset */') <
+      css.indexOf('/* Suzy base styles */'),
+  )
   assert.match(css, /prefers-reduced-motion/)
   assert.doesNotMatch(css, /@import/)
   assert.deepEqual(Object.keys(compile().modes), ['light', 'dark'])
