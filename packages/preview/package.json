@@ -1,6 +1,38 @@
 {
   "name": "@heysuzy/preview",
-  "version": "1.0.0",
-  "main": "index.js",
+  "version": "0.1.0",
+  "description": "Local component previews without story files",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "yarn@1.22.22",
+  "bin": {
+    "suzy-preview": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/document.d.ts",
+      "import": "./dist/document.js"
+    },
+    "./config": {
+      "types": "./dist/config.d.ts",
+      "import": "./dist/config.js"
+    },
+    "./schema": "./preview.schema.json"
+  },
+  "files": [
+    "dist",
+    "preview.schema.json",
+    "examples",
+    "docs",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc && node scripts/executable.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "yarn build && node --test tests/*.test.mjs",
+    "check": "biome check ."
+  },
   "license": "MIT"
 }

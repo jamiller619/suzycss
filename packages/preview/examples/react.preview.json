@@ -1,0 +1,40 @@
+{
+  "$schema": "../preview.schema.json",
+  "schemaVersion": 1,
+  "project": { "root": "..", "entry": "src/index.ts" },
+  "provenance": {
+    "generator": "@heysuzy/preview",
+    "generatorVersion": "0.1.0",
+    "generatedAt": "2026-01-01T00:00:00.000Z",
+    "revision": 1
+  },
+  "components": [
+    {
+      "id": "src/button.tsx#Button",
+      "name": "Button",
+      "framework": "react",
+      "source": { "path": "src/button.tsx", "export": "Button" },
+      "import": { "path": "src/button.tsx", "export": "Button" },
+      "props": {
+        "children": {
+          "type": { "text": "ReactNode", "kind": "node" },
+          "generated": {
+            "$ref": "react-node",
+            "element": "span",
+            "children": ["Continue"]
+          },
+          "value": "Save"
+        },
+        "onClick": {
+          "type": { "text": "() => void", "kind": "function" },
+          "generated": { "$ref": "function", "behavior": "log" }
+        }
+      },
+      "states": [
+        { "name": "default" },
+        { "name": "disabled", "values": { "disabled": true } }
+      ]
+    }
+  ],
+  "diagnostics": []
+}
