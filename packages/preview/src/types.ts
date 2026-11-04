@@ -99,9 +99,23 @@ export interface PreviewDocument {
   }
   components: PreviewComponent[]
   diagnostics: Diagnostic[]
+  runtime?: RuntimeConfiguration
   conflicts?: ReconciliationConflict[]
   orphans?: OrphanedCustomization[]
   [extension: `x-${string}`]: JsonValue | undefined
+}
+export interface RuntimeConfiguration {
+  styles?: string[]
+  wrapper?: ModuleReference
+  providers?: ModuleReference[]
+  webComponents?: Record<
+    string,
+    {
+      properties?: string[]
+      attributes?: Record<string, string>
+      events?: string[]
+    }
+  >
 }
 export interface ReconciliationConflict {
   path: string

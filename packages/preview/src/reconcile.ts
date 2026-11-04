@@ -95,6 +95,13 @@ export async function reconcileDocuments(
     if (!baseComponents.has(id) && !generatedComponents.has(id))
       components.push(structuredClone(edited))
   }
+  const runtime = mergeNode(
+    baseline.runtime ?? MISSING,
+    current.runtime ?? MISSING,
+    generated.runtime ?? MISSING,
+    '$.runtime',
+    conflicts,
+  )
   const document: PreviewDocument = {
     ...structuredClone(generated),
     ...extensionFields(
@@ -123,6 +130,9 @@ export async function reconcileDocuments(
     ],
     conflicts: [...(current.conflicts ?? []), ...conflicts],
     orphans,
+    ...(runtime === MISSING
+      ? {}
+      : { runtime: runtime as PreviewDocument['runtime'] }),
   }
   return { document, conflicts, orphans }
 }

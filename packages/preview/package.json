@@ -39,6 +39,10 @@
       "types": "./dist/reconcile.d.ts",
       "import": "./dist/reconcile.js"
     },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "import": "./dist/server.js"
+    },
     "./schema": "./preview.schema.json"
   },
   "files": [
@@ -55,7 +59,12 @@
     "check": "biome check ."
   },
   "dependencies": {
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vite": "^7.0.0"
+  },
+  "devDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "license": "MIT"
 }

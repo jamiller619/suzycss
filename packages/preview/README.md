@@ -8,6 +8,7 @@ yarn workspace @heysuzy/preview build
 suzy-preview --input src/index.ts --output .preview
 suzy-preview --config preview.config.json
 suzy-preview --validate .preview/preview.json
+suzy-preview serve --port 3000
 ```
 
 With no flags, the project root is the nearest directory containing
@@ -164,3 +165,53 @@ Malformed, structurally invalid, semantically invalid, and conflicted files stay
 on disk for correction. `read()` returns the last valid in-memory document when
 available but never writes that snapshot over the user's file. A proposed UI
 document is structurally and semantically validated before it can become active.
+
+## Local preview server
+
+`suzy-preview serve` starts a loopback Vite development server. Vite is used
+because this workspace already integrates with it and it provides the project
+module graph, dependency transforms, CSS/assets, source maps, user Vite config,
+and HMR without generating per-component source files. Preview entrypoints are
+virtual modules; `.preview/runtime` remains reserved for disposable future build
+artifacts. An existing valid `preview.json` starts rendering directly without
+rerunning analysis. If no document exists, the server performs initial analysis,
+mock generation, and persistence.
+
+The server uses the target project as Vite's root, loads its Vite configuration,
+and adds literal/wildcard `baseUrl`/`paths` mappings from `tsconfig.json`.
+React 19 JSX uses the automatic transform. Project imports continue to resolve
+styles, preprocessors installed by the project, static assets, and dependencies
+through Vite. This is a documented subset rather than a promise to emulate every
+compiler plugin or nonstandard resolver.
+
+The explorer shell and selected component run in separate same-origin iframe
+documents. Messages require the exact iframe window, origin, channel, protocol
+version, and known message type. A React error boundary and the iframe boundary
+keep import/render failures out of shell navigation. The frame imports the real
+recorded module/export and resolves function, React-node, omission, and module
+descriptors. Runtime `providers`, a shared `wrapper`, component wrappers, and
+state wrappers compose around the actual component. Runtime `styles` are loaded
+as Vite modules.
+
+Web Components import their registration module and instantiate the recorded
+tag. Inferred `attribute` metadata and explicit `runtime.webComponents`
+property/attribute mappings control assignment; only configured event names are
+observed. Mount cleanup removes listeners and instances. Source changes reload
+the isolated frame so the new document has a fresh custom-element registry;
+state-preserving custom-element HMR is intentionally not claimed.
+
+Vite watches loaded dependencies and its module graph. A project-tree fallback
+watches source/config/style files when dynamically imported edges cannot
+propagate HMR. React updates use Vite HMR where possible and otherwise reload the
+frame; styles and direct valid document edits reload the frame. Source changes
+also schedule bounded analysis/reconciliation. Invalid direct JSON edits produce
+shell diagnostics while the last valid document stays active, and correction
+recovers without restarting the server.
+
+Callback and configured custom-event invocations are posted through the protocol
+into a 200-entry shell log. Payload serialization bounds depth, breadth, and
+string length and labels circular/non-serializable values. The only mutation
+route writes the configured document through `DocumentStore`; it requires the
+same HTTP origin, a random session token, JSON content type, revision, and etag.
+There is no arbitrary filesystem-write endpoint. Closing the server stops Vite,
+the fallback watchers, timers, iframe mounts, and event listeners.

@@ -130,6 +130,7 @@ test('external JSON edits three-way merge with new source and preserve explicit 
     { $ref: 'validator', name: 'minLength', options: { value: 3 } },
   ]
   props.title.generator = { $ref: 'generator', name: 'text' }
+  edited.runtime = { styles: ['src/manual.css'] }
   edited.components[0].states.push({
     name: 'manual-state',
     values: { title: 'State title' },
@@ -148,6 +149,7 @@ test('external JSON edits three-way merge with new source and preserve explicit 
   assert.equal(merged.props.nullable.value, null)
   assert.ok(merged.props.title.validators)
   assert.equal(merged.props.title.generator.name, 'text')
+  assert.deepEqual(result.document.runtime, { styles: ['src/manual.css'] })
   assert.ok(merged.props.discovered)
   assert.ok(merged.states.some((state) => state.name === 'manual-state'))
   assert.equal(merged.props.obsolete, undefined)

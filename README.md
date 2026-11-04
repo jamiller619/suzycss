@@ -1,9 +1,6 @@
 # Suzy
 
-Suzy is a Yarn workspaces monorepo.
-
-## Packages
-
+@heysuzy, or Suzy, is a monorepo for several CSS packages:
 - [`@heysuzy/compiler`](packages/compiler) — the Suzy CLI and theme compiler.
 - [`@heysuzy/components`](packages/components) — Suzy web components.
 - [`@heysuzy/preview`](packages/preview) — Suzy component

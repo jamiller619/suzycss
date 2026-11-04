@@ -49,6 +49,9 @@
       "type": "array",
       "items": { "$ref": "#/$defs/diagnostic" }
     },
+    "runtime": {
+      "$ref": "#/$defs/runtime"
+    },
     "conflicts": {
       "type": "array",
       "items": { "$ref": "#/$defs/conflict" }
@@ -61,6 +64,30 @@
   "patternProperties": { "^x-": true },
   "additionalProperties": false,
   "$defs": {
+    "runtime": {
+      "type": "object",
+      "properties": {
+        "styles": { "type": "array", "items": { "type": "string" } },
+        "wrapper": { "$ref": "#/$defs/module" },
+        "providers": { "type": "array", "items": { "$ref": "#/$defs/module" } },
+        "webComponents": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "properties": { "type": "array", "items": { "type": "string" } },
+              "attributes": {
+                "type": "object",
+                "additionalProperties": { "type": "string" }
+              },
+              "events": { "type": "array", "items": { "type": "string" } }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
     "conflict": {
       "type": "object",
       "required": ["path", "code", "message"],

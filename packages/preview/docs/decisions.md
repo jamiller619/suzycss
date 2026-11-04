@@ -36,6 +36,16 @@
 - Atomic replacement uses an adjacent temporary file and never cleans the output
   directory. The external-editor boundary is the last etag check before rename;
   detectable races and post-write mismatches are failures, not merged successes.
+- The local runtime uses Vite custom-app middleware and virtual modules. It keeps
+  component code in the project, preserves normal CSS/assets/dependency handling,
+  and avoids mandatory generated entry files. `tsconfig` path aliases are added
+  explicitly; project Vite plugins remain authoritative for richer resolution.
+- The shell never mounts project components directly. A validated same-origin
+  iframe protocol isolates navigation from import/render failures. The same
+  iframe is re-created for custom-element source updates to obtain a new registry.
+- Runtime mutation is intentionally narrow: same-origin + random token +
+  revision/etag can update only the configured preview document. No route accepts
+  an arbitrary path. Event logs are circular-safe and capped at 200 entries.
 
 Focused verification: `yarn workspace @heysuzy/preview test` and
 `yarn workspace @heysuzy/preview run check`.

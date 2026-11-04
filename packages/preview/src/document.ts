@@ -82,7 +82,47 @@ export function validateDocument(value: unknown): ValidationIssue[] {
     'message',
   ])
   validateReviewEntries(value.orphans, '$.orphans', issues, ['path', 'reason'])
+  validateRuntime(value.runtime, issues)
   return issues
+}
+function validateRuntime(value: unknown, issues: ValidationIssue[]) {
+  if (value === undefined) return
+  pushType(issues, '$.runtime', value, 'object')
+  if (!object(value)) return
+  if (value.styles !== undefined) {
+    pushType(issues, '$.runtime.styles', value.styles, 'array')
+    if (Array.isArray(value.styles))
+      value.styles.forEach((style, index) => {
+        pushType(issues, `$.runtime.styles[${index}]`, style, 'string')
+      })
+  }
+  if (value.wrapper !== undefined)
+    validateModuleReference(value.wrapper, '$.runtime.wrapper', issues)
+  if (value.providers !== undefined) {
+    pushType(issues, '$.runtime.providers', value.providers, 'array')
+    if (Array.isArray(value.providers))
+      value.providers.forEach((provider, index) => {
+        validateModuleReference(
+          provider,
+          `$.runtime.providers[${index}]`,
+          issues,
+        )
+      })
+  }
+  if (value.webComponents !== undefined)
+    pushType(issues, '$.runtime.webComponents', value.webComponents, 'object')
+}
+function validateModuleReference(
+  value: unknown,
+  path: string,
+  issues: ValidationIssue[],
+) {
+  pushType(issues, path, value, 'object')
+  if (!object(value)) return
+  if (value.$ref !== 'module')
+    issues.push({ path: `${path}.$ref`, message: 'expected "module"' })
+  pushType(issues, `${path}.path`, value.path, 'string')
+  pushType(issues, `${path}.export`, value.export, 'string')
 }
 function validateReviewEntries(
   value: unknown,
