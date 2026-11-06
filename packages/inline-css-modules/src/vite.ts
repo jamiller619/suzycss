@@ -16,7 +16,7 @@ export interface InlineCssModulesViteOptions {
   generateScopedName?: GenerateScopedName
 }
 
-const PREFIX = 'virtual:@heysuzy/inline-css-modules/'
+const PREFIX = 'virtual:inline-css-modules/'
 
 /** Stable, collision-free hash of a string (FNV-1a, base36). */
 function hash(input: string): string {
@@ -40,7 +40,7 @@ export function inlineCssModules(
   const virtualByFile = new Map<string, string>()
 
   return {
-    name: '@heysuzy/inline-css-modules',
+    name: 'inline-css-modules',
     enforce: 'pre',
 
     resolveId(source) {

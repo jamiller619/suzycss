@@ -228,14 +228,14 @@ function scopeCss(
     const value = seg.replace(/^\s*composes\s*:/i, '').trim()
     if (/\bfrom\b/i.test(value)) {
       throw new Error(
-        '@heysuzy/inline-css-modules: `composes: ... from "..."` is not supported — inline ' +
+        'inline-css-modules: `composes: ... from "..."` is not supported — inline ' +
           'blocks have no external file to compose from. Compose only local classes ' +
           'from the same css`` block.',
       )
     }
     if (!owner) {
       throw new Error(
-        '@heysuzy/inline-css-modules: `composes` is only allowed in a rule with a single ' +
+        'inline-css-modules: `composes` is only allowed in a rule with a single ' +
           'class selector, e.g. `.button { composes: base }`.',
       )
     }
@@ -454,7 +454,7 @@ function findCssTags(src: string, filename: string): CssTag[] {
       if (c === '$' && src[i + 1] === '{') {
         if (collect) {
           throw new Error(
-            `@heysuzy/inline-css-modules: the css\`...\` block in ${filename} must be ` +
+            `inline-css-modules: the css\`...\` block in ${filename} must be ` +
               `static CSS (found a \${} interpolation). Move dynamic values to ` +
               `CSS custom properties set at runtime instead.`,
           )

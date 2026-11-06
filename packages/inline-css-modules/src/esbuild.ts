@@ -9,7 +9,7 @@ import { readFile } from 'node:fs/promises'
 import type { OnLoadArgs, Plugin } from 'esbuild'
 import { type GenerateScopedName, transformSource } from './transform.js'
 
-const NAMESPACE = '@heysuzy/inline-css-modules'
+const NAMESPACE = 'inline-css-modules'
 
 export interface InlineCssModulesOptions {
   /** Which files to scan. Default: /\.[cm]?[jt]sx?$/ */

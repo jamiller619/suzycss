@@ -3,7 +3,7 @@ import { transformSource } from './transform.js'
 
 /** Editor-only class-name completions for inline CSS Modules. */
 function init({
-  typescript: typescript,
+  typescript,
 }: {
   typescript: typeof ts
 }): ts.server.PluginModule {
@@ -82,7 +82,7 @@ function init({
         if (
           !typescript.isImportDeclaration(importDeclaration) ||
           !typescript.isStringLiteral(importDeclaration.moduleSpecifier) ||
-          importDeclaration.moduleSpecifier.text !== '@heysuzy/inline-css-modules'
+          importDeclaration.moduleSpecifier.text !== 'inline-css-modules'
         )
           return original
 

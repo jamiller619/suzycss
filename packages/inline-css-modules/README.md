@@ -5,7 +5,7 @@ If you use CSS Modules, why are we putting our CSS in another file? VS Code — 
 This is the way (_btw don't):
 
 ```ts
-import { css } from '@heysuzy/inline-css-modules'
+import { css } from 'inline-css-modules'
 
 const styles = css`
   .page {
@@ -37,7 +37,7 @@ Your bundler rewrites every `` css`...` `` block at build time: class selectors 
 ## Install
 
 ```sh
-npm install -D @heysuzy/inline-css-modules
+npm install -D inline-css-modules
 ```
 
 ## Setup
@@ -48,7 +48,7 @@ Add the plugin for your bundler.
 
 ```ts
 import { defineConfig } from 'vite'
-import { inlineCssModules } from '@heysuzy/inline-css-modules/vite'
+import { inlineCssModules } from 'inline-css-modules/vite'
 
 export default defineConfig({
   plugins: [inlineCssModules()],
@@ -61,7 +61,7 @@ Scoped CSS routes through Vite's own pipeline, so PostCSS, HMR in dev, and extra
 
 ```ts
 import * as esbuild from 'esbuild'
-import { inlineCssModules } from '@heysuzy/inline-css-modules/esbuild'
+import { inlineCssModules } from 'inline-css-modules/esbuild'
 
 await esbuild.build({
   entryPoints: ['src/main.tsx'],
@@ -80,7 +80,7 @@ Enable the bundled TypeScript language-service plugin in your application's `tsc
 ```json
 {
  "compilerOptions": {
-   "plugins": [{ "name": "@heysuzy/inline-css-modules/typescript" }]
+   "plugins": [{ "name": "inline-css-modules/typescript" }]
  }
 }
 ```
@@ -90,7 +90,7 @@ In VS Code, select **TypeScript: Select TypeScript Version → Use Workspace Ver
 Other editors must support TypeScript language-service plugins.
 
 ```ts
-import { css } from '@heysuzy/inline-css-modules'
+import { css } from 'inline-css-modules'
 
 const styles = css`
  .page { display: flex; }
@@ -169,7 +169,7 @@ inlineCssModules({
 
 - **Static CSS only.** A `${}` interpolation inside a `` css`...` `` block is a build error — move dynamic values to CSS custom properties set at runtime.
 - **Editor highlighting.** The styled-components / lit-html VS Code extensions highlight CSS in a `css` tag automatically; no extra config needed.
-- **Testing.** Run your test files through the same transform (or the `@heysuzy/inline-css-modules/transform` core) so `` css`...` `` blocks are replaced before they reach the runtime.
+- **Testing.** Run your test files through the same transform (or the `inline-css-modules/transform` core) so `` css`...` `` blocks are replaced before they reach the runtime.
 
 ## License
 

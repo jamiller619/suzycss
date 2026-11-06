@@ -16,7 +16,7 @@ export type Styles<K extends string = string> = Readonly<Record<K, string>>
  *   `;
  *   element.className = styles.page; // "page_<hash>"
  *
- * For automatic editor completions, enable @heysuzy/inline-css-modules/typescript.
+ * For automatic editor completions, enable inline-css-modules/typescript.
  * For compile-time checking, pass the local names as a generic:
  *
  *   const styles = css<'page' | 'item'>`...`;
@@ -26,7 +26,7 @@ export function css<K extends string = string>(
   ..._values: unknown[]
 ): Styles<K> {
   throw new Error(
-    '@heysuzy/inline-css-modules: a css`...` block reached runtime untransformed. ' +
+    'inline-css-modules: a css`...` block reached runtime untransformed. ' +
       "Add inlineCssModules() to your esbuild plugins (and to your test runner's transform).",
   )
 }

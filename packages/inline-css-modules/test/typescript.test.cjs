@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict')
 const { test } = require('node:test')
 const ts = require('typescript')
-const init = require('@heysuzy/inline-css-modules/typescript')
+const init = require('inline-css-modules/typescript')
 const path = require('node:path')
 
 function setup(text) {
@@ -44,7 +44,7 @@ function setup(text) {
     filename,
   }
 }
-const prelude = "import { css } from '@heysuzy/inline-css-modules';\n"
+const prelude = "import { css } from 'inline-css-modules';\n"
 
 test('completes local classes from the matching block using shared scoping rules', () => {
   const fixture = setup(
