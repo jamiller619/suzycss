@@ -6,19 +6,21 @@
     "useIgnoreFile": true
   },
   "files": {
+    "ignoreUnknown": false,
     "includes": [
       "**",
       "!!**/dist",
       "!!**/test-results",
-      "!!suzy.schema.json",
-      "!!src/preview/page.html",
-      "!!src/styles/theme.css"
+      "!!packages/compiler/suzy.schema.json",
+      "!!packages/compiler/src/preview/page.html",
+      "!!packages/compiler/src/styles/theme.css"
     ]
   },
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
-    "indentWidth": 2
+    "indentWidth": 2,
+    "trailingNewline": true
   },
   "javascript": {
     "formatter": {
@@ -34,6 +36,7 @@
     }
   },
   "assist": {
+    "enabled": true,
     "actions": {
       "source": {
         "organizeImports": "on"

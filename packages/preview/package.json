@@ -1,0 +1,83 @@
+{
+  "name": "@suzycss/preview",
+  "version": "0.1.0",
+  "description": "Local component previews with an easy button.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "packageManager": "yarn@1.22.22",
+  "bin": {
+    "suzy-preview": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/document.d.ts",
+      "import": "./dist/document.js"
+    },
+    "./config": {
+      "types": "./dist/config.d.ts",
+      "import": "./dist/config.js"
+    },
+    "./analysis": {
+      "types": "./dist/analysis.d.ts",
+      "import": "./dist/analysis.js"
+    },
+    "./write": {
+      "types": "./dist/write.d.ts",
+      "import": "./dist/write.js"
+    },
+    "./mock": {
+      "types": "./dist/mock.d.ts",
+      "import": "./dist/mock.js"
+    },
+    "./persistence": {
+      "types": "./dist/persistence.d.ts",
+      "import": "./dist/persistence.js"
+    },
+    "./reconcile": {
+      "types": "./dist/reconcile.d.ts",
+      "import": "./dist/reconcile.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "import": "./dist/server.js"
+    },
+    "./schema": "./preview.schema.json"
+  },
+  "files": [
+    "dist",
+    "preview.schema.json",
+    "examples",
+    "docs",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc && node scripts/executable.mjs",
+    "dev": "yarn build && node scripts/dev.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "yarn build && node --test tests/*.test.mjs",
+    "check": "biome check ."
+  },
+  "dependencies": {
+    "typescript": "^6.0.3",
+    "vite": "^7.0.0"
+  },
+  "peerDependencies": {
+    "react": ">=18.2 <20",
+    "react-dom": ">=18.2 <20"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "license": "MIT"
+}

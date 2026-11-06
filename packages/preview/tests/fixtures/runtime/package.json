@@ -1,0 +1,10 @@
+{
+  "name": "preview-runtime-fixture",
+  "private": true,
+  "type": "module",
+  "source": "src/index.js",
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}

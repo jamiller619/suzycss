@@ -1,0 +1,334 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://heysuzy.dev/schemas/preview/v1.json",
+  "title": "Suzy Preview Document v1",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "project",
+    "provenance",
+    "components",
+    "diagnostics"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schemaVersion": { "const": 1 },
+    "project": {
+      "type": "object",
+      "required": ["root", "entry"],
+      "properties": {
+        "root": { "type": "string" },
+        "entry": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["generator", "generatorVersion", "generatedAt", "revision"],
+      "properties": {
+        "generator": { "type": "string" },
+        "generatorVersion": { "type": "string" },
+        "generatedAt": { "type": "string", "format": "date-time" },
+        "revision": { "type": "integer", "minimum": 0 },
+        "baseRevision": { "type": "integer", "minimum": 0 },
+        "sourceFingerprint": { "type": "string" },
+        "baseline": {
+          "type": "object",
+          "required": ["fingerprint", "path"],
+          "properties": {
+            "fingerprint": { "type": "string" },
+            "path": { "type": "string" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "components": { "type": "array", "items": { "$ref": "#/$defs/component" } },
+    "diagnostics": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/diagnostic" }
+    },
+    "runtime": {
+      "$ref": "#/$defs/runtime"
+    },
+    "conflicts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/conflict" }
+    },
+    "orphans": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/orphan" }
+    }
+  },
+  "patternProperties": { "^x-": true },
+  "additionalProperties": false,
+  "$defs": {
+    "runtime": {
+      "type": "object",
+      "properties": {
+        "styles": { "type": "array", "items": { "type": "string" } },
+        "wrapper": { "$ref": "#/$defs/module" },
+        "providers": { "type": "array", "items": { "$ref": "#/$defs/module" } },
+        "webComponents": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "properties": { "type": "array", "items": { "type": "string" } },
+              "attributes": {
+                "type": "object",
+                "additionalProperties": { "type": "string" }
+              },
+              "events": { "type": "array", "items": { "type": "string" } }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "conflict": {
+      "type": "object",
+      "required": ["path", "code", "message"],
+      "properties": {
+        "path": { "type": "string" },
+        "code": { "type": "string" },
+        "message": { "type": "string" },
+        "baseline": {},
+        "current": {},
+        "generated": {}
+      },
+      "additionalProperties": false
+    },
+    "orphan": {
+      "type": "object",
+      "required": ["path", "reason", "value", "sourceRevision"],
+      "properties": {
+        "path": { "type": "string" },
+        "reason": {
+          "enum": ["component-removed", "prop-removed", "state-removed"]
+        },
+        "value": {},
+        "sourceRevision": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "diagnostic": {
+      "type": "object",
+      "required": ["severity", "code", "message"],
+      "properties": {
+        "severity": { "enum": ["info", "warning", "error"] },
+        "code": { "type": "string" },
+        "message": { "type": "string" },
+        "path": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "module": {
+      "type": "object",
+      "required": ["$ref", "path", "export"],
+      "properties": {
+        "$ref": { "const": "module" },
+        "path": { "type": "string" },
+        "export": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "descriptor": {
+      "oneOf": [
+        { "$ref": "#/$defs/module" },
+        {
+          "type": "object",
+          "required": ["$ref"],
+          "properties": { "$ref": { "const": "omit" } },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["$ref", "behavior"],
+          "properties": {
+            "$ref": { "const": "function" },
+            "behavior": { "enum": ["noop", "log", "reject", "resolve"] }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["$ref", "element"],
+          "properties": {
+            "$ref": { "const": "react-node" },
+            "element": { "type": "string" },
+            "props": { "type": "object" },
+            "children": { "type": "array" }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["$ref", "name"],
+          "properties": {
+            "$ref": { "const": "generator" },
+            "name": { "type": "string" },
+            "options": { "type": "object" },
+            "module": { "$ref": "#/$defs/module" }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "value": {
+      "description": "JSON value, or a reserved descriptor object identified by $ref",
+      "oneOf": [
+        { "type": ["string", "number", "boolean", "null", "array"] },
+        { "type": "object", "not": { "required": ["$ref"] } },
+        { "$ref": "#/$defs/descriptor" }
+      ]
+    },
+    "typeMetadata": {
+      "type": "object",
+      "required": ["text"],
+      "properties": {
+        "text": { "type": "string" },
+        "kind": {
+          "enum": [
+            "string",
+            "number",
+            "boolean",
+            "object",
+            "array",
+            "function",
+            "node",
+            "unknown"
+          ]
+        },
+        "required": { "type": "boolean" },
+        "description": { "type": "string" },
+        "properties": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/typeMetadata" }
+        },
+        "items": { "$ref": "#/$defs/typeMetadata" },
+        "branches": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/typeMetadata" }
+        },
+        "discriminator": { "type": "string" },
+        "source": {
+          "type": "object",
+          "required": ["path", "line"],
+          "properties": {
+            "path": { "type": "string" },
+            "line": { "type": "integer", "minimum": 1 }
+          },
+          "additionalProperties": false
+        },
+        "enum": {
+          "type": "array",
+          "items": { "type": ["string", "number", "boolean", "null"] }
+        }
+      },
+      "additionalProperties": false
+    },
+    "prop": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "$ref": "#/$defs/typeMetadata" },
+        "attribute": { "type": "string" },
+        "default": { "$ref": "#/$defs/value" },
+        "generated": { "$ref": "#/$defs/value" },
+        "value": { "$ref": "#/$defs/value" },
+        "generator": { "$ref": "#/$defs/descriptor" },
+        "validators": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["$ref"],
+            "properties": {
+              "$ref": { "const": "validator" },
+              "name": { "type": "string" },
+              "module": { "$ref": "#/$defs/module" },
+              "options": { "type": "object" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "diagnostics": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/diagnostic" }
+        }
+      },
+      "patternProperties": { "^x-": true },
+      "additionalProperties": false
+    },
+    "state": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "generated": { "type": "boolean" },
+        "description": { "type": "string" },
+        "values": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/value" }
+        },
+        "wrapper": { "$ref": "#/$defs/module" },
+        "diagnostics": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/diagnostic" }
+        }
+      },
+      "patternProperties": { "^x-": true },
+      "additionalProperties": false
+    },
+    "component": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "framework",
+        "source",
+        "import",
+        "props",
+        "states"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "framework": { "enum": ["react", "web-component"] },
+        "source": {
+          "type": "object",
+          "required": ["path", "export"],
+          "properties": {
+            "path": { "type": "string" },
+            "export": { "type": "string" },
+            "tagName": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "import": {
+          "type": "object",
+          "required": ["path", "export"],
+          "properties": {
+            "path": { "type": "string" },
+            "export": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "props": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/prop" }
+        },
+        "states": { "type": "array", "items": { "$ref": "#/$defs/state" } },
+        "wrapper": { "$ref": "#/$defs/module" },
+        "diagnostics": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/diagnostic" }
+        }
+      },
+      "patternProperties": { "^x-": true },
+      "additionalProperties": false
+    }
+  }
+}

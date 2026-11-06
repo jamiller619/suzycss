@@ -1,0 +1,13 @@
+{
+  "name": "preview-consumer-react",
+  "private": true,
+  "type": "module",
+  "source": "src/index.tsx",
+  "scripts": {
+    "preview": "suzy-preview"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}
