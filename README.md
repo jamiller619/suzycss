@@ -1,4 +1,4 @@
-# Suzy
+<img src="assets/logo.svg" alt="Suzy" width="132">
 
 @suzycss, or Suzy, is a monorepo for several CSS packages:
 
