@@ -25,8 +25,8 @@ Requires Node.js 22+.
 Run Suzy as a one-time thing:
 
 ```sh
-npx @heysuzy/compiler init
-npx @heysuzy/compiler preview
+npx @suzycss/compiler init
+npx @suzycss/compiler preview
 ```
 
 `init` creates `suzy.config.json` and `src/styles/theme.css`. The config references the editor schema bundled with the installed Suzy package, normally at `./node_modules/%40suzy/compiler/suzy.schema.json` (`%40` is the URL-encoded `@`). Preview serves a local theme specimen at `http://127.0.0.1:3000` that updates as you edit the config.
@@ -47,15 +47,15 @@ Suzy bundles [`modern-css-reset`](https://www.npmjs.com/package/modern-css-reset
 
 | Command | Purpose |
 | --- | --- |
-| `npx @heysuzy/compiler init --accent blue --radius pill` | Create a theme with named presets |
-| `npx @heysuzy/compiler build` | Generate CSS from the config |
-| `npx @heysuzy/compiler watch` | Rebuild CSS when the config changes |
-| `npx @heysuzy/compiler preview --port 3001` | Preview the theme on a custom port |
-| `npx @heysuzy/compiler check` | Check token references and text contrast |
-| `npx @heysuzy/compiler check --strict` | Fail on warnings as well as errors |
-| `npx @heysuzy/compiler --help` | Show commands and options |
+| `npx @suzycss/compiler init --accent blue --radius pill` | Create a theme with named presets |
+| `npx @suzycss/compiler build` | Generate CSS from the config |
+| `npx @suzycss/compiler watch` | Rebuild CSS when the config changes |
+| `npx @suzycss/compiler preview --port 3001` | Preview the theme on a custom port |
+| `npx @suzycss/compiler check` | Check token references and text contrast |
+| `npx @suzycss/compiler check --strict` | Fail on warnings as well as errors |
+| `npx @suzycss/compiler --help` | Show commands and options |
 
-If installed with Yarn, replace `npx @heysuzy/compiler` with `yarn suzy`.
+If installed with Yarn, replace `npx @suzycss/compiler` with `yarn suzy`.
 
 All commands accept `--config <path>`. Output paths are relative to the config file. Preview does not write CSS; use `build` or `watch` to update your application's stylesheet.
 
@@ -64,7 +64,7 @@ All commands accept `--config <path>`. Output paths are relative to the config f
 Choose your theme's styles when running `init`:
 
 ```sh
-npx @heysuzy/compiler init --accent teal --gray slate --radius pill --density compact
+npx @suzycss/compiler init --accent teal --gray slate --radius pill --density compact
 ```
 
 | Option | Available styles | Default |
@@ -106,7 +106,7 @@ Set `prefix` to customize public token names (default: `"suzy"`):
 }
 ```
 
-This generates names such as `--app-bg` and `--app-gray-2`. Use the configured prefix in your CSS and overrides. Prefixes start with a lowercase letter and contain lowercase letters, digits, and hyphen-separated segments. You can also initialize with `npx @heysuzy/compiler init --prefix app`. Native styles, the preview, and web components use the prefix automatically; element names and `data-suzy-theme` stay unchanged.
+This generates names such as `--app-bg` and `--app-gray-2`. Use the configured prefix in your CSS and overrides. Prefixes start with a lowercase letter and contain lowercase letters, digits, and hyphen-separated segments. You can also initialize with `npx @suzycss/compiler init --prefix app`. Native styles, the preview, and web components use the prefix automatically; element names and `data-suzy-theme` stay unchanged.
 
 Suzy always generates both light and dark themes and follows the OS preference. Set `data-suzy-theme="light"` or `data-suzy-theme="dark"` on `<html>` or a nested element to choose explicitly.
 
@@ -114,10 +114,10 @@ See the [CLI and configuration reference](docs/cli.md) for options, presets, ove
 
 ## Web components
 
-Components are a separate, optional package. Install `@heysuzy/components` alongside Suzy, then import it in your browser entry point alongside the generated theme stylesheet:
+Components are a separate, optional package. Install `@suzycss/components` alongside Suzy, then import it in your browser entry point alongside the generated theme stylesheet:
 
 ```js
-import '@heysuzy/components'
+import '@suzycss/components'
 ```
 
 ```html
@@ -129,7 +129,7 @@ import '@heysuzy/components'
 </suzy-surface>
 ```
 
-The preview displays a dedicated **Web components** section when `@heysuzy/components` is installed in the project containing your config. Otherwise the section and component scripts are omitted. Restart the preview after installing or removing the package.
+The preview displays a dedicated **Web components** section when `@suzycss/components` is installed in the project containing your config. Otherwise the section and component scripts are omitted. Restart the preview after installing or removing the package.
 
 `<suzy-surface>` derives its background from its nearest enclosing surface, even through ordinary wrappers. Siblings share a color. A detached surface starts again at the base color; moving a surface updates its subtree automatically. There is no level override and `z-index` does not affect the color.
 
@@ -173,7 +173,7 @@ yarn test:package           # Install and run a packed copy outside this repo
 
 Browser tests save screenshots to ignored `test-results/`. Set `SUZY_CHROMIUM_EXECUTABLE` to use an installed compatible Chromium. The package smoke test requires registry access or a populated Yarn cache.
 
-The optional component package lives in `packages/components` and is linked through the workspace in this repo. It is not included in the published `@heysuzy/compiler` package.
+The optional component package lives in `packages/components` and is linked through the workspace in this repo. It is not included in the published `@suzycss/compiler` package.
 
 ### Packaging
 
@@ -189,7 +189,7 @@ Packing runs the build automatically. The build also regenerates the schema and 
 The CLI, preview, and diagnostics share a pure TypeScript compiler with no filesystem or process access:
 
 ```ts
-import { resolveConfig, createTheme, validateTheme, renderCss } from '@heysuzy/compiler';
+import { resolveConfig, createTheme, validateTheme, renderCss } from '@suzycss/compiler';
 
 const config = resolveConfig({ colors: { accent: 'blue' } });
 const theme = createTheme(config);
@@ -197,4 +197,4 @@ const diagnostics = validateTheme(theme);
 const css = renderCss(theme);
 ```
 
-The package includes type declarations and exports its schema as `@heysuzy/compiler/schema` and `configSchema`.
+The package includes type declarations and exports its schema as `@suzycss/compiler/schema` and `configSchema`.

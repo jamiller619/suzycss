@@ -10,7 +10,7 @@ export async function startPreview(configPath: string, port: number) {
   const require = createRequire(resolve(configPath))
   let entry: string | undefined
   try {
-    entry = require.resolve('@heysuzy/components/preview')
+    entry = require.resolve('@suzycss/components/preview')
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'MODULE_NOT_FOUND')
       throw error
@@ -19,7 +19,7 @@ export async function startPreview(configPath: string, port: number) {
     components.set('/components/index.js', await readFile(entry, 'utf8'))
     components.set(
       '/components/surface.js',
-      await readFile(require.resolve('@heysuzy/components/surface.js'), 'utf8'),
+      await readFile(require.resolve('@suzycss/components/surface.js'), 'utf8'),
     )
   }
   const current = await loadTheme(configPath)

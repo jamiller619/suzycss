@@ -1,0 +1,30 @@
+{
+  "name": "@suzycss/colors",
+  "version": "0.1.0",
+  "description": "Radix Colors as classless, system-aware CSS custom properties.",
+  "type": "module",
+  "exports": {
+    "./*.css": "./dist/*.css"
+  },
+  "sideEffects": [
+    "./dist/*.css"
+  ],
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "node src/build.ts",
+    "test": "yarn build && node --test tests/*.test.mts",
+    "typecheck": "tsc --noEmit",
+    "prepack": "yarn build && yarn test"
+  },
+  "devDependencies": {
+    "@radix-ui/colors": "^3.0.0",
+    "typescript": "^7.0.2"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "MIT"
+}

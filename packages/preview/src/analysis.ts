@@ -108,14 +108,14 @@ export async function analyzeProject(
     diagnostics,
   )
   return {
-    $schema: '../node_modules/@heysuzy/preview/preview.schema.json',
+    $schema: '../node_modules/@suzycss/preview/preview.schema.json',
     schemaVersion: 1,
     project: {
       root: '.',
       entry: relativePath(options.projectRoot, options.input),
     },
     provenance: {
-      generator: '@heysuzy/preview',
+      generator: '@suzycss/preview',
       generatorVersion: '0.1.0',
       generatedAt: new Date(0).toISOString(),
       revision: 1,

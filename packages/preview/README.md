@@ -1,10 +1,10 @@
-# @heysuzy/preview
+# @suzycss/preview
 
 Local React and Web Component explorer without story files. The executable is
 `suzy-preview` (the npm scope does not determine its name).
 
 ```sh
-npm install --save-dev @heysuzy/preview
+npm install --save-dev @suzycss/preview
 npx suzy-preview
 ```
 

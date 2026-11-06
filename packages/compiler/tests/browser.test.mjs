@@ -428,7 +428,7 @@ test('preview shows components only when installed in the consumer project', asy
       await mkdir(join(dir, 'node_modules/@suzy'), { recursive: true })
       await symlink(
         resolve('../components'),
-        join(dir, 'node_modules/@heysuzy/components'),
+        join(dir, 'node_modules/@suzycss/components'),
         'dir',
       )
     }

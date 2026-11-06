@@ -1,5 +1,5 @@
 {
-  "name": "@heysuzy/compiler",
+  "name": "@suzycss/compiler",
   "version": "0.1.3",
   "description": "Cascade FTW. A deterministic CSS theme compiler.",
   "type": "module",
@@ -41,13 +41,13 @@
     "modern-css-reset": "^1.4.0"
   },
   "devDependencies": {
-    "@heysuzy/components": "^0.1.0"
+    "@suzycss/components": "^0.1.0"
   },
   "peerDependencies": {
-    "@heysuzy/components": "^0.1.0"
+    "@suzycss/components": "^0.1.0"
   },
   "peerDependenciesMeta": {
-    "@heysuzy/components": {
+    "@suzycss/components": {
       "optional": true
     }
   }

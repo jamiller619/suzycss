@@ -1,5 +1,5 @@
 {
-  "name": "@heysuzy/preview",
+  "name": "@suzycss/preview",
   "version": "0.1.0",
   "description": "Local component previews with an easy button.",
   "type": "module",

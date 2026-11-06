@@ -17,8 +17,5 @@
     "noImplicitOverride": true,
     "exactOptionalPropertyTypes": true
   },
-  "exclude": [
-    "node_modules",
-    "dist"
-  ]
+  "exclude": ["node_modules", "dist"]
 }

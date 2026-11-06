@@ -62,5 +62,5 @@
   decision is made. Vite dependency/build outputs are excluded from source
   analysis watches to avoid false external-change conflicts.
 
-Focused verification: `yarn workspace @heysuzy/preview test` and
-`yarn workspace @heysuzy/preview run check`.
+Focused verification: `yarn workspace @suzycss/preview test` and
+`yarn workspace @suzycss/preview run check`.

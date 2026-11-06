@@ -36,7 +36,7 @@ function documentFixture() {
     schemaVersion: 1,
     project: { root: '.', entry: 'src/index.js' },
     provenance: {
-      generator: '@heysuzy/preview',
+      generator: '@suzycss/preview',
       generatorVersion: '0.1.0',
       generatedAt: '1970-01-01T00:00:00.000Z',
       revision: 1,

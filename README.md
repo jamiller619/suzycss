@@ -1,14 +1,14 @@
 # Suzy
 
-@heysuzy, or Suzy, is a monorepo for several CSS packages:
-- [`@heysuzy/compiler`](packages/compiler) — the Suzy CLI and theme compiler.
-- [`@heysuzy/components`](packages/components) — Suzy web components.
-- [`@heysuzy/preview`](packages/preview) — Suzy component isolation framework.
+@suzycss, or Suzy, is a monorepo for several CSS packages:
+- [`@suzycss/compiler`](packages/compiler) — the Suzy CLI and theme compiler.
+- [`@suzycss/components`](packages/components) — Suzy web components.
+- [`@suzycss/preview`](packages/preview) — Suzy component isolation framework.
 - [`inline-css-modules`](packages/inline-css-modules) — zero-runtime
   CSS Modules written inline in JavaScript and TypeScript files.
 
 Package-specific documentation lives with its package. See the
-[`@heysuzy/compiler` README](packages/compiler/README.md) for installation, usage, and
+[`@suzycss/compiler` README](packages/compiler/README.md) for installation, usage, and
 development instructions.
 
 ## Development

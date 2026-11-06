@@ -30,17 +30,25 @@ function start(command, args, options = {}) {
 process.once('SIGINT', () => stop())
 process.once('SIGTERM', () => stop())
 
-start(process.execPath, [
-  resolve(packageRoot, '../../node_modules/typescript/bin/tsc'),
-  '--watch',
-  '--preserveWatchOutput',
-], { cwd: packageRoot })
+start(
+  process.execPath,
+  [
+    resolve(packageRoot, '../../node_modules/typescript/bin/tsc'),
+    '--watch',
+    '--preserveWatchOutput',
+  ],
+  { cwd: packageRoot },
+)
 
-start(process.execPath, [
-  '--watch',
-  '--watch-preserve-output',
-  resolve(packageRoot, 'dist/cli.js'),
-  '--config',
-  'preview.config.json',
-  ...process.argv.slice(2),
-], { cwd: projectRoot })
+start(
+  process.execPath,
+  [
+    '--watch',
+    '--watch-preserve-output',
+    resolve(packageRoot, 'dist/cli.js'),
+    '--config',
+    'preview.config.json',
+    ...process.argv.slice(2),
+  ],
+  { cwd: projectRoot },
+)

@@ -1,5 +1,5 @@
 {
-  "name": "heysuzy",
+  "name": "suzycss",
   "version": "0.1.0",
   "private": true,
   "packageManager": "yarn@1.22.22",
@@ -7,14 +7,14 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "yarn workspace @heysuzy/compiler build && yarn workspace @heysuzy/components build && yarn workspace inline-css-modules build && yarn workspace @heysuzy/preview build",
-    "dev": "yarn workspace @heysuzy/compiler dev",
-    "preview": "yarn workspace @heysuzy/preview dev",
-    "typecheck": "yarn workspace @heysuzy/compiler typecheck && yarn workspace @heysuzy/components typecheck && yarn workspace @heysuzy/preview typecheck",
-    "test": "yarn workspace @heysuzy/compiler test && yarn workspace inline-css-modules test && yarn workspace @heysuzy/preview test",
-    "test:browser": "yarn workspace @heysuzy/compiler test:browser",
-    "test:package": "yarn workspace @heysuzy/compiler test:package",
-    "check": "biome check .",
+    "build": "yarn workspace @suzycss/colors build && yarn workspace @suzycss/compiler build && yarn workspace @suzycss/components build && yarn workspace inline-css-modules build && yarn workspace @suzycss/preview build",
+    "dev": "yarn workspace @suzycss/compiler dev",
+    "preview": "yarn workspace @suzycss/preview dev",
+    "typecheck": "yarn workspace @suzycss/colors typecheck && yarn workspace @suzycss/compiler typecheck && yarn workspace @suzycss/components typecheck && yarn workspace @suzycss/preview typecheck",
+    "test": "yarn workspace @suzycss/colors test && yarn workspace @suzycss/compiler test && yarn workspace inline-css-modules test && yarn workspace @suzycss/preview test",
+    "test:browser": "yarn workspace @suzycss/compiler test:browser",
+    "test:package": "yarn workspace @suzycss/compiler test:package",
+    "check": "biome check --write .",
     "check:fix": "biome check --write .",
     "lint": "biome lint .",
     "format": "biome format --write ."

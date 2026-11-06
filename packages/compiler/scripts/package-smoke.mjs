@@ -30,7 +30,7 @@ try {
       name: 'suzy-consumer-test',
       private: true,
       type: 'module',
-      dependencies: { '@heysuzy/compiler': `file:${tar}` },
+      dependencies: { '@suzycss/compiler': `file:${tar}` },
     }),
   )
   run('yarn', [
@@ -68,7 +68,7 @@ try {
   run(process.execPath, [
     '--input-type=module',
     '-e',
-    "import {resolveConfig,createTheme,renderCss} from '@heysuzy/compiler'; import schema from '@heysuzy/compiler/schema' with {type:'json'}; if (!schema.properties.version || !renderCss(createTheme(resolveConfig())).includes('--suzy-bg')) throw Error('Bad exports');",
+    "import {resolveConfig,createTheme,renderCss} from '@suzycss/compiler'; import schema from '@suzycss/compiler/schema' with {type:'json'}; if (!schema.properties.version || !renderCss(createTheme(resolveConfig())).includes('--suzy-bg')) throw Error('Bad exports');",
   ])
   const checkPreview = (installed) =>
     run(process.execPath, [
@@ -78,8 +78,8 @@ try {
       import assert from 'node:assert/strict';
       import { resolve } from 'node:path';
       import { createRequire } from 'node:module';
-      if (${installed}) createRequire(resolve('package.json')).resolve('@heysuzy/components/preview');
-      import { startPreview } from './node_modules/@heysuzy/compiler/dist/preview/server.js';
+      if (${installed}) createRequire(resolve('package.json')).resolve('@suzycss/components/preview');
+      import { startPreview } from './node_modules/@suzycss/compiler/dist/preview/server.js';
       const server = await startPreview(resolve('suzy.config.json'), 0);
       try {
         const html = await (await fetch(server.url)).text();
@@ -92,7 +92,7 @@ try {
   checkPreview(false)
   run('yarn', [
     'add',
-    `@heysuzy/components@file:${componentsTar}`,
+    `@suzycss/components@file:${componentsTar}`,
     '--cache-folder',
     join(dir, 'cache'),
     '--ignore-scripts',

@@ -6,6 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
+    "ignoreUnknown": false,
     "includes": [
       "**",
       "!!**/dist",
@@ -18,7 +19,8 @@
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
-    "indentWidth": 2
+    "indentWidth": 2,
+    "trailingNewline": true
   },
   "javascript": {
     "formatter": {
@@ -34,6 +36,7 @@
     }
   },
   "assist": {
+    "enabled": true,
     "actions": {
       "source": {
         "organizeImports": "on"
