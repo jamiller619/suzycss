@@ -1,7 +1,7 @@
 {
   "name": "@suzycss/colors",
   "version": "0.1.0",
-  "description": "Radix Colors as classless, system-aware CSS custom properties.",
+  "description": "Radix Colors with automatic light and dark modes.",
   "type": "module",
   "exports": {
     "./*.css": "./dist/*.css"

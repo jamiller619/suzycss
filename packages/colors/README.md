@@ -1,6 +1,6 @@
 # @suzycss/colors
 
-Radix Colors as classless, system-aware CSS custom properties.
+Radix Colors with automatic light and dark modes.
 
 This package ships the regular color and alpha entry points from
 `@radix-ui/colors`. Each file pairs its light and dark values with the CSS

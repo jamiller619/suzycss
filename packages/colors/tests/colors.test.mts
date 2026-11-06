@@ -19,7 +19,7 @@ test('dist contains only the regular Radix CSS entry points', async () => {
   assert.deepEqual(packageFiles, radixFiles)
 })
 
-test('every CSS entry point is classless and adaptive', async () => {
+test('every CSS entry point is adaptive without theme selectors', async () => {
   const cssFiles = (await readdir(radixDirectory)).filter(
     (name) => name.endsWith('.css') && !name.includes('-dark'),
   )
