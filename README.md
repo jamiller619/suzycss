@@ -1,6 +1,9 @@
 # Suzy
 
 @suzycss, or Suzy, is a monorepo for several CSS packages:
+
+- [`@suzycss/colors`](packages/colors) — classless, system-aware Radix Colors
+  generated with CSS `light-dark()`.
 - [`@suzycss/compiler`](packages/compiler) — the Suzy CLI and theme compiler.
 - [`@suzycss/components`](packages/components) — Suzy web components.
 - [`@suzycss/preview`](packages/preview) — Suzy component isolation framework.
