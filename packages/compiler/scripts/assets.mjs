@@ -7,7 +7,7 @@ await copyFile(
 )
 await mkdir(new URL('../dist/preview/', import.meta.url), { recursive: true })
 await copyFile(
-  new URL('../assets/logo.svg', import.meta.url),
+  new URL('../../../assets/logo.svg', import.meta.url),
   new URL('../dist/preview/logo.svg', import.meta.url),
 )
 for (const file of [
