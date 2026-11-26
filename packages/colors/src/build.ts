@@ -1,4 +1,4 @@
-import { mkdir, readdir, rm, writeFile } from 'node:fs/promises'
+import { copyFile, cp, mkdir, readdir, rm, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -35,7 +35,11 @@ function customProperty(name: string): string {
   return `--${kebabToken}${kebabToken.endsWith('-a') ? '' : '-'}${match[2]}`
 }
 
-function declarations(light: Palette, dark: Palette): string {
+function declarations(
+  light: Palette,
+  dark: Palette,
+  indentation: string,
+): string {
   const darkEntries = new Map(
     Object.entries(dark).map(([name, color]) => [customProperty(name), color]),
   )
@@ -47,7 +51,16 @@ function declarations(light: Palette, dark: Palette): string {
       if (darkValue === undefined) {
         throw new Error(`Missing dark value for ${name}`)
       }
-      return `  ${name}: light-dark(${lightValue}, ${darkValue});`
+
+      const declaration = `${indentation}${name}: light-dark(${lightValue}, ${darkValue});`
+      if (declaration.length <= 80) {
+        return declaration
+      }
+
+      return `${indentation}${name}: light-dark(
+${indentation}  ${lightValue},
+${indentation}  ${darkValue}
+${indentation});`
     })
     .join('\n')
 }
@@ -89,7 +102,7 @@ function generateCss(filename: string): string {
       : `\n\n@supports (color: color(display-p3 1 1 1)) {
   @media (color-gamut: p3) {
     :root {
-      ${declarations(p3, darkP3)}
+${declarations(p3, darkP3, '      ')}
     }
   }
 }`
@@ -97,7 +110,7 @@ function generateCss(filename: string): string {
   return `/* Generated from @radix-ui/colors. Do not edit by hand. */
 :root {
   color-scheme: light dark;
-  ${declarations(light, dark)}
+${declarations(light, dark, '  ')}
 }${wideGamut}\n`
 }
 
@@ -114,7 +127,6 @@ for (const relativePath of [
   'index.js',
   'index.mjs',
   'colors.png',
-  'LICENSE',
   'types',
 ]) {
   await rm(join(packageDirectory, relativePath), {
@@ -126,5 +138,13 @@ for (const relativePath of [
 for (const filename of cssFiles) {
   await writeFile(join(outputDirectory, filename), generateCss(filename))
 }
+
+await copyFile(
+  join(radixDirectory, 'index.mjs'),
+  join(outputDirectory, 'index.js'),
+)
+await cp(join(radixDirectory, 'types'), join(outputDirectory, 'types'), {
+  recursive: true,
+})
 
 console.log(`Generated ${cssFiles.length} adaptive CSS entry points.`)

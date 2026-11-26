@@ -3,14 +3,18 @@
   "version": "0.1.0",
   "description": "Radix Colors with automatic light and dark modes.",
   "type": "module",
+  "types": "./dist/types/index.d.ts",
   "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/index.js"
+    },
     "./*.css": "./dist/*.css"
   },
-  "sideEffects": [
-    "./dist/*.css"
-  ],
+  "sideEffects": false,
   "files": [
     "dist",
+    "LICENSE",
     "README.md"
   ],
   "scripts": {
