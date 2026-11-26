@@ -10,9 +10,6 @@ preference without a class on `<html>` or `<body>`.
 Separate `*-dark.css` and `*-dark-alpha.css` files are intentionally omitted;
 both modes already exist in the corresponding regular file.
 
-The package is CSS-only. It does not publish Radix's JavaScript bundles, type
-declarations, image, or license file.
-
 ## Install
 
 ```sh
